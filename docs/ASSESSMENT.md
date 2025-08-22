@@ -1,3 +1,7 @@
+# Project Assessment
+
+> This document captures an automated assessment of the repository's initial community and packaging status. It is retained for educational purposes and is not part of the contribution guidelines.
+
 Short answer: **right now, usage looks minimal** and it’s unlikely to see casual adoption beyond people who want to reproduce the paper **unless** it’s packaged and documented more like a library.
 
 **Evidence from the repo (today):**

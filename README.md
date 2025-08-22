@@ -75,6 +75,15 @@ psd_project/
 └── results/          # CSV summaries of other experimental metrics
 ```
 
+## Contributing
+
+We welcome contributions of all kinds. To get started, please read
+[CONTRIBUTING.md](CONTRIBUTING.md). By participating in this project, you
+agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues
+should be reported privately as described in
+[SECURITY.md](SECURITY.md). For general questions, contact
+[alpay@lightcap.ai](mailto:alpay@lightcap.ai).
+
 ## Licence
 
 This project is licensed under the [MIT License](LICENSE).  See the
