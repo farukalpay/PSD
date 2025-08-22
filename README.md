@@ -27,6 +27,15 @@ points in non‑convex optimisation problems.  This repository includes:
   lengths, per‑episode decreases, convergence iterations and noise
   robustness.
 
+## Quickstart Notebook
+
+For a hands‑on introduction, see the
+[10‑Minute Quickstart notebook](docs/PSD_Quickstart_Colab.ipynb). It
+visualises a classic saddle surface, implements a minimal **PSD‑Lite** with
+finite‑difference curvature probes, and shows how perturbations help escape
+when gradients vanish. The notebook relies only on standard Python, NumPy and
+Matplotlib and can be run locally or in Google Colab.
+
 ## PyTorch Optimizer
 
 The repository now also exposes a small PyTorch package providing a
