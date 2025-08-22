@@ -64,6 +64,6 @@ psd_project/
 
 ## Licence
 
-This code is released for academic use only.  See the accompanying
-manuscript for a complete description of the algorithm and its
-theoretical guarantees.
+This project is licensed under the [MIT License](LICENSE).  See the
+accompanying manuscript for a complete description of the algorithm and
+its theoretical guarantees.
