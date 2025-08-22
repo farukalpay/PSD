@@ -27,6 +27,19 @@ points in non‑convex optimisation problems.  This repository includes:
   lengths, per‑episode decreases, convergence iterations and noise
   robustness.
 
+## PyTorch Optimizer
+
+The repository now also exposes a small PyTorch package providing a
+``torch.optim.Optimizer`` implementation of PSD.  The package can be
+installed from PyPI:
+
+```bash
+pip install psd-optimizer
+```
+
+Example training scripts for MNIST and CIFAR‑10 using this optimizer are
+available in the ``examples/`` directory.
+
 ## Running the Experiments
 
 All experiments can be reproduced by executing the following command from

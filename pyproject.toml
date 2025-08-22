@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "psd-optimizer"
+version = "0.1.0"
+description = "Perturbed Saddle-point Descent optimizer for PyTorch"
+authors = [{name = "PSD Authors"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "torch",
+    "torchvision",
+]
+
+[project.urls]
+Homepage = "https://github.com/farukalpay/PSD"
+
+[tool.setuptools.packages.find]
+include = ["psd_optimizer"]
