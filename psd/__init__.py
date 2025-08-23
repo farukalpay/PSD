@@ -1,5 +1,11 @@
-"""Utilities for framework specific PSD optimizers."""
+"""Utilities and reference implementations for PSD."""
 
-from .framework_optimizers import PSDTorch, PSDTensorFlow
+from . import algorithms, functions
 
-__all__ = ["PSDTorch", "PSDTensorFlow"]
+try:  # Optional framework-specific optimisers
+    from .framework_optimizers import PSDTorch, PSDTensorFlow
+except Exception:  # pragma: no cover - dependencies may be missing
+    PSDTorch = None  # type: ignore
+    PSDTensorFlow = None  # type: ignore
+
+__all__ = ["algorithms", "functions", "PSDTorch", "PSDTensorFlow"]
