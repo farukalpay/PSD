@@ -45,6 +45,7 @@ TensorFlow::
 
 from __future__ import annotations
 
+import logging
 import math
 from typing import Iterable, Optional, Callable, List, Tuple
 
@@ -57,6 +58,9 @@ try:  # Optional import for environments without TensorFlow
     import tensorflow as tf
 except Exception:  # pragma: no cover - fallback when tensorflow is unavailable
     tf = None  # type: ignore
+
+
+logger = logging.getLogger(__name__)
 
 
 class PSDTorch(torch.optim.Optimizer):
@@ -93,6 +97,8 @@ class PSDTorch(torch.optim.Optimizer):
         g_thres: float = 1e-3,
         t_thres: int = 10,
         r: float = 1e-3,
+        max_grad_norm: Optional[float] = 1.0,
+        **kwargs,
     ) -> None:
         if torch is None:  # pragma: no cover - ensures clear error if torch missing
             raise ImportError("PyTorch is required to use PSDTorch")
@@ -103,8 +109,10 @@ class PSDTorch(torch.optim.Optimizer):
         if t_thres < 0:
             raise ValueError("t_thres must be non-negative")
 
-        defaults = dict(lr=lr, g_thres=g_thres, t_thres=t_thres, r=r)
-        super().__init__(params, defaults)
+        defaults = dict(
+            lr=lr, g_thres=g_thres, t_thres=t_thres, r=r, max_grad_norm=max_grad_norm
+        )
+        super().__init__(params, defaults, **kwargs)
 
     @torch.no_grad()
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
@@ -128,6 +136,12 @@ class PSDTorch(torch.optim.Optimizer):
             ]
             if not params:
                 continue
+
+            max_grad_norm = group.get("max_grad_norm")
+            if max_grad_norm is not None:
+                torch.nn.utils.clip_grad_norm_(params, max_grad_norm)
+
+            prev_params = [p.clone() for p in params]
 
             # Ensure state dictionaries exist for all parameters in the group.
             states = []
@@ -165,6 +179,17 @@ class PSDTorch(torch.optim.Optimizer):
             for p, state in zip(params, states):
                 p.add_(p.grad, alpha=-lr)
                 state["t"] += 1
+
+            # Numerical stability check
+            for p, prev in zip(params, prev_params):
+                if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
+                    p.copy_(prev)
+                    group["lr"] *= 0.5
+                    logger.warning(
+                        "Non-finite values detected. Reducing learning rate to %s and skipping update.",
+                        group["lr"],
+                    )
+                    break
 
         return loss
 
