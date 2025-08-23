@@ -100,11 +100,28 @@ def _topological_sort(graph: Graph) -> List[Any]:
 
 
 def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[Any]:
-    """Rebuild the path from ``start`` to ``end`` using ``previous`` map."""
+    """Rebuild the path from ``start`` to ``end`` using ``previous`` map.
+
+    Prior to this change the function blindly followed the predecessor map.
+    In the presence of cycles it could loop indefinitely when the ``previous``
+    dictionary contained a cycle, something that happens when graphs with
+    cycles slip through validation.  We now track visited nodes while walking
+    backwards from ``end`` to ``start`` and raise ``ValueError`` if a cycle is
+    encountered.
+    """
 
     path: List[Any] = [end]
+    visited = set()
     while path[-1] != start:
-        path.append(previous[path[-1]])
+        node = path[-1]
+        if node in visited:
+            # Hitting the same node twice indicates a cycle in ``previous``.
+            # Returning an explicit error prevents an infinite loop.
+            raise ValueError("Cycle detected while reconstructing path.")
+        visited.add(node)
+        if node not in previous:
+            raise ValueError("No path from start to end.")
+        path.append(previous[node])
     path.reverse()
     return path
 
