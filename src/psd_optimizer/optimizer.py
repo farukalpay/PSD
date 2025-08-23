@@ -1,15 +1,16 @@
+from __future__ import annotations
+
 import logging
-import math
-from typing import Iterable, Optional, Callable
+from typing import Callable, Iterable, Optional
 
 import torch
+from torch import Tensor
 from torch.optim.optimizer import Optimizer
-
 
 logger = logging.getLogger(__name__)
 
 
-class PSDOptimizer(Optimizer):
+class PSDOptimizer(Optimizer):  # type: ignore[misc]
     """Perturbed Saddle-point Descent (PSD) optimizer.
 
     This is a simple PyTorch implementation of the PSD algorithm described in
@@ -31,14 +32,14 @@ class PSDOptimizer(Optimizer):
         r: float = 1e-3,
         T: int = 10,
         max_grad_norm: Optional[float] = 1.0,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         if lr <= 0:
             raise ValueError("Invalid learning rate")
         defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T, max_grad_norm=max_grad_norm)
         super().__init__(params, defaults, **kwargs)
 
-    def step(self, closure: Optional[Callable[[], float]] = None):
+    def step(self, closure: Optional[Callable[[], Tensor]] = None) -> Tensor:
         """Perform a single optimization step.
 
         Parameters
@@ -58,12 +59,12 @@ class PSDOptimizer(Optimizer):
 
         # Compute loss and gradients via the user-provided closure
         loss = closure()
-        params = [p for group in self.param_groups for p in group['params'] if p.grad is not None]
+        params = [p for group in self.param_groups for p in group["params"] if p.grad is not None]
         if not params:
             return loss
 
         group = self.param_groups[0]
-        max_grad_norm = group.get('max_grad_norm')
+        max_grad_norm = group.get("max_grad_norm")
         if max_grad_norm is not None:
             torch.nn.utils.clip_grad_norm_(params, max_grad_norm)
 
@@ -72,16 +73,16 @@ class PSDOptimizer(Optimizer):
         if any(not torch.isfinite(p.grad).all() for p in params):
             for p, prev in zip(params, prev_params):
                 p.data.copy_(prev)
-            group['lr'] *= 0.5
+            group["lr"] *= 0.5
             logger.warning(
                 "Non-finite gradients detected. Reducing learning rate to %s and skipping update.",
-                group['lr'],
+                group["lr"],
             )
             return loss
 
         grad_norm = torch.sqrt(sum(torch.sum(p.grad.detach() ** 2) for p in params))
-        eps = group['epsilon']
-        lr = group['lr']
+        eps = group["epsilon"]
+        lr = group["lr"]
 
         if grad_norm > eps:
             with torch.no_grad():
@@ -90,17 +91,17 @@ class PSDOptimizer(Optimizer):
             for p, prev in zip(params, prev_params):
                 if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
                     p.data.copy_(prev)
-                    group['lr'] *= 0.5
+                    group["lr"] *= 0.5
                     logger.warning(
                         "Non-finite values detected. Reducing learning rate to %s and skipping update.",
-                        group['lr'],
+                        group["lr"],
                     )
                     break
             return loss
 
         # Escape episode
-        r = group['r']
-        T = group['T']
+        r = group["r"]
+        T = group["T"]
         with torch.no_grad():
             for p in params:
                 noise = torch.randn_like(p) * r
@@ -117,10 +118,16 @@ class PSDOptimizer(Optimizer):
                         p.add_(p.grad, alpha=-lr)
                         if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
                             p.data.copy_(prev)
-                            group['lr'] *= 0.5
+                            group["lr"] *= 0.5
                             logger.warning(
-                                "Non-finite values detected during escape step. Reducing learning rate to %s and skipping update.",
-                                group['lr'],
+                                (
+                                    "Non-finite values detected during escape step. "
+                                    "Reducing learning rate to %s and skipping update."
+                                ),
+                                group["lr"],
                             )
                             return loss
         return loss
+
+
+__all__ = ["PSDOptimizer"]

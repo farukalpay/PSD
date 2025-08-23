@@ -1,10 +1,13 @@
-from typing import Iterable, Optional, Tuple, Callable
+from __future__ import annotations
+
+from typing import Callable, Iterable, Optional, Tuple
 
 import torch
+from torch import Tensor
 from torch.optim.optimizer import Optimizer
 
 
-class PerturbedAdam(Optimizer):
+class PerturbedAdam(Optimizer):  # type: ignore[misc]
     r"""Adam optimizer with gradient-based perturbations to escape saddle points.
 
     This optimizer merges the adaptive moment estimation of :class:`~torch.optim.Adam`
@@ -72,8 +75,8 @@ class PerturbedAdam(Optimizer):
         )
         super().__init__(params, defaults)
 
-    @torch.no_grad()
-    def step(self, closure: Optional[Callable[[], float]] = None):
+    @torch.no_grad()  # type: ignore[misc]
+    def step(self, closure: Optional[Callable[[], Tensor]] = None) -> Optional[Tensor]:
         """Perform a single optimization step.
 
         The method follows the usual Adam update rule.  Additionally, it monitors
@@ -83,7 +86,7 @@ class PerturbedAdam(Optimizer):
         noise and the internal moment estimates are reset to zero.
         """
 
-        loss = None
+        loss: Optional[Tensor] = None
         if closure is not None:
             with torch.enable_grad():
                 loss = closure()
@@ -143,3 +146,6 @@ class PerturbedAdam(Optimizer):
                         state["t_noise"] = state["t"]
 
         return loss
+
+
+__all__ = ["PerturbedAdam"]

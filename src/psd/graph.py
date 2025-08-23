@@ -9,12 +9,11 @@ early to avoid potentially expensive computations on invalid inputs.
 
 from __future__ import annotations
 
+import logging
 from collections import deque
 from math import isfinite
 from time import perf_counter
-import logging
 from typing import Any, Dict, List, Tuple
-
 
 logger = logging.getLogger(__name__)
 
@@ -189,4 +188,3 @@ def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
 
 
 __all__ = ["find_optimal_path"]
-

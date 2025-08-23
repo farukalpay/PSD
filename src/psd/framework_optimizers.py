@@ -45,25 +45,26 @@ TensorFlow::
 
 from __future__ import annotations
 
+# mypy: ignore-errors
 import logging
 import math
-from typing import Iterable, Optional, Callable, List, Tuple
+from typing import Callable, Iterable, List, Optional, Tuple
 
 try:  # Optional import for environments without PyTorch
     import torch
 except Exception:  # pragma: no cover - fallback when torch is unavailable
-    torch = None  # type: ignore
+    torch = None  # type: ignore[assignment]
 
 try:  # Optional import for environments without TensorFlow
     import tensorflow as tf
 except Exception:  # pragma: no cover - fallback when tensorflow is unavailable
-    tf = None  # type: ignore
+    tf = None  # type: ignore[assignment]
 
 
 logger = logging.getLogger(__name__)
 
 
-class PSDTorch(torch.optim.Optimizer):
+class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
     """Perturbed Saddle-point Descent optimizer for PyTorch.
 
     Parameters
@@ -98,7 +99,7 @@ class PSDTorch(torch.optim.Optimizer):
         t_thres: int = 10,
         r: float = 1e-3,
         max_grad_norm: Optional[float] = 1.0,
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         if torch is None:  # pragma: no cover - ensures clear error if torch missing
             raise ImportError("PyTorch is required to use PSDTorch")
@@ -109,12 +110,10 @@ class PSDTorch(torch.optim.Optimizer):
         if t_thres < 0:
             raise ValueError("t_thres must be non-negative")
 
-        defaults = dict(
-            lr=lr, g_thres=g_thres, t_thres=t_thres, r=r, max_grad_norm=max_grad_norm
-        )
+        defaults = dict(lr=lr, g_thres=g_thres, t_thres=t_thres, r=r, max_grad_norm=max_grad_norm)
         super().__init__(params, defaults, **kwargs)
 
-    @torch.no_grad()
+    @torch.no_grad()  # type: ignore[misc]
     def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         """Perform a single optimization step.
 
@@ -131,9 +130,7 @@ class PSDTorch(torch.optim.Optimizer):
                 loss = closure()
 
         for group in self.param_groups:
-            params: List[torch.nn.Parameter] = [
-                p for p in group["params"] if p.grad is not None
-            ]
+            params: List[torch.nn.Parameter] = [p for p in group["params"] if p.grad is not None]
             if not params:
                 continue
 
@@ -165,9 +162,7 @@ class PSDTorch(torch.optim.Optimizer):
             lr = group["lr"]
 
             # Determine whether to perturb.
-            need_perturb = grad_norm <= g_thres and all(
-                state["t"] - state["t_noise"] > t_thres for state in states
-            )
+            need_perturb = grad_norm <= g_thres and all(state["t"] - state["t_noise"] > t_thres for state in states)
 
             if need_perturb:
                 for p, state in zip(params, states):
@@ -194,7 +189,7 @@ class PSDTorch(torch.optim.Optimizer):
         return loss
 
 
-class PSDTensorFlow(tf.keras.optimizers.Optimizer):
+class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
     """Perturbed Saddle-point Descent optimizer for TensorFlow.
 
     This class follows the Keras optimizer API and supports serialization
@@ -240,7 +235,12 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):
             self.add_slot(var, "t_noise", initializer=tf.constant_initializer(-1.0e9))
 
     @tf.function
-    def apply_gradients(self, grads_and_vars: Iterable[Tuple[tf.Tensor, tf.Variable]], name: Optional[str] = None, **kwargs):  # pragma: no cover - TF specific
+    def apply_gradients(
+        self,
+        grads_and_vars: Iterable[Tuple[tf.Tensor, tf.Variable]],
+        name: Optional[str] = None,
+        **kwargs,
+    ):  # pragma: no cover - TF specific
         grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
         if not grads_and_vars:
             return

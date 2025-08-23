@@ -23,9 +23,11 @@ class TestFunction:
     grad: Callable[[np.ndarray], np.ndarray]
     hess: Callable[[np.ndarray], np.ndarray]
 
+
 ################################################################################
 # Separable quartic function
 ################################################################################
+
 
 def separable_quartic(x: np.ndarray) -> float:
     """Compute the value of the separable quartic function.
@@ -93,6 +95,7 @@ def separable_quartic_hess(x: np.ndarray) -> np.ndarray:
 # Coupled quartic function
 ################################################################################
 
+
 def coupled_quartic(x: np.ndarray) -> float:
     """Compute the value of the coupled quartic function.
 
@@ -112,7 +115,6 @@ def coupled_quartic(x: np.ndarray) -> float:
     float
         Function value.
     """
-    d = x.size
     quartic = np.sum(x**4 - x**2)
     # upper triangular sum of x_i x_j for i < j
     coupling = 0.1 * np.sum(np.triu(np.outer(x, x), 1))
@@ -135,7 +137,6 @@ def coupled_quartic_grad(x: np.ndarray) -> np.ndarray:
     np.ndarray
         Gradient vector of shape (d,).
     """
-    d = x.size
     grad = separable_quartic_grad(x)
     # gradient of coupling term: 0.1 * sum_j x_j for each coordinate i
     coupling_grad = 0.1 * (np.sum(x) - x)
@@ -170,6 +171,7 @@ def coupled_quartic_hess(x: np.ndarray) -> np.ndarray:
 # Rosenbrock function
 ################################################################################
 
+
 def rosenbrock(x: np.ndarray) -> float:
     """Compute the Rosenbrock function in d dimensions.
 
@@ -192,7 +194,7 @@ def rosenbrock(x: np.ndarray) -> float:
     x = np.asarray(x)
     xi = x[:-1]
     xip1 = x[1:]
-    return float(np.sum(100.0 * (xip1 - xi**2)**2 + (1.0 - xi)**2))
+    return float(np.sum(100.0 * (xip1 - xi**2) ** 2 + (1.0 - xi) ** 2))
 
 
 def rosenbrock_grad(x: np.ndarray) -> np.ndarray:
@@ -213,8 +215,8 @@ def rosenbrock_grad(x: np.ndarray) -> np.ndarray:
     """
     x = np.asarray(x)
     grad = np.zeros_like(x)
-    grad[:-1] += -400.0 * x[:-1] * (x[1:] - x[:-1]**2) - 2.0 * (1.0 - x[:-1])
-    grad[1:] += 200.0 * (x[1:] - x[:-1]**2)
+    grad[:-1] += -400.0 * x[:-1] * (x[1:] - x[:-1] ** 2) - 2.0 * (1.0 - x[:-1])
+    grad[1:] += 200.0 * (x[1:] - x[:-1] ** 2)
     return grad
 
 
@@ -235,16 +237,17 @@ def rosenbrock_hess(x: np.ndarray) -> np.ndarray:
     d = len(x)
     hess = np.zeros((d, d))
     for i in range(d - 1):
-        hess[i, i] += 1200.0 * x[i]**2 - 400.0 * x[i+1] + 2.0
-        hess[i, i+1] += -400.0 * x[i]
-        hess[i+1, i] += -400.0 * x[i]
-        hess[i+1, i+1] += 200.0
+        hess[i, i] += 1200.0 * x[i] ** 2 - 400.0 * x[i + 1] + 2.0
+        hess[i, i + 1] += -400.0 * x[i]
+        hess[i + 1, i] += -400.0 * x[i]
+        hess[i + 1, i + 1] += 200.0
     return hess
 
 
 ################################################################################
 # Random quadratic function
 ################################################################################
+
 
 def random_quadratic(d: int, seed: int | None = None) -> tuple[np.ndarray, np.ndarray]:
     """Generate a random quadratic function with controlled spectrum.
@@ -324,3 +327,24 @@ TEST_FUNCTIONS: Dict[str, TestFunction] = {
     "coupled_quartic": COUPLED_QUARTIC,
     "rosenbrock": ROSENBROCK,
 }
+
+
+__all__ = [
+    "TestFunction",
+    "separable_quartic",
+    "separable_quartic_grad",
+    "separable_quartic_hess",
+    "coupled_quartic",
+    "coupled_quartic_grad",
+    "coupled_quartic_hess",
+    "rosenbrock",
+    "rosenbrock_grad",
+    "rosenbrock_hess",
+    "random_quadratic",
+    "random_quadratic_grad",
+    "random_quadratic_hess",
+    "SEPARABLE_QUARTIC",
+    "COUPLED_QUARTIC",
+    "ROSENBROCK",
+    "TEST_FUNCTIONS",
+]
