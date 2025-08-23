@@ -85,7 +85,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
             super().apply_gradients(grads_and_vars, name, **kwargs)
             return None
 
-        grads, vars = zip(*grads_and_vars, strict=False)
+        grads, vars = zip(*grads_and_vars)  # noqa: B905
 
         # Compute global gradient norm across all tensors.
         sq_norms: list[tf.Tensor] = []

@@ -165,18 +165,18 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
             need_perturb = grad_norm <= g_thres and all(state["t"] - state["t_noise"] > t_thres for state in states)
 
             if need_perturb:
-                for p, state in zip(params, states, strict=False):
+                for p, state in zip(params, states):  # noqa: B905
                     noise = torch.randn_like(p) * r
                     p.add_(noise)
                     state["t_noise"] = state["t"]
 
             # Gradient descent update and step count.
-            for p, state in zip(params, states, strict=False):
+            for p, state in zip(params, states):  # noqa: B905
                 p.add_(p.grad, alpha=-lr)
                 state["t"] += 1
 
             # Numerical stability check
-            for p, prev in zip(params, prev_params, strict=False):
+            for p, prev in zip(params, prev_params):  # noqa: B905
                 if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
                     p.copy_(prev)
                     group["lr"] *= 0.5
@@ -245,7 +245,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         if not grads_and_vars:
             return None
 
-        grads, vars = zip(*grads_and_vars, strict=False)
+        grads, vars = zip(*grads_and_vars)  # noqa: B905
         global_norm = tf.linalg.global_norm(grads)
 
         # Cached tensor versions of hyper-parameters for efficiency.

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import numpy as np
 import pytest
 from hypothesis import given, settings
@@ -72,10 +74,10 @@ def test_psd_probe_returns_sosp() -> None:
     x0 = np.array([1.0])
 
     class NegRNG:
-        def normal(self: "NegRNG", size: int | None = None) -> np.ndarray | float:
+        def normal(self: NegRNG, size: int | None = None) -> np.ndarray | float:
             return -1.0 if size is None else -np.ones(size)
 
-        def random(self: "NegRNG", size: int | None = None) -> np.ndarray | float:
+        def random(self: NegRNG, size: int | None = None) -> np.ndarray | float:
             return 0.0 if size is None else np.zeros(size)
 
     x, _ = algorithms.psd_probe(x0, grad, hess, epsilon=0.1, ell=1.0, rho=1.0, random_state=NegRNG())
