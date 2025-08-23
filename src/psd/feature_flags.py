@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 
 
@@ -9,8 +10,22 @@ class FeatureFlags:
 
     new_escape_condition: bool = False
 
+    @classmethod
+    def from_env(cls) -> "FeatureFlags":
+        """Create flags based on environment variables."""
 
-FLAGS = FeatureFlags()
+        def _env_true(name: str, default: bool = False) -> bool:
+            return os.getenv(name, str(default)).lower() in {
+                "1",
+                "true",
+                "yes",
+                "on",
+            }
+
+        return cls(new_escape_condition=_env_true("PSD_NEW_ESCAPE_CONDITION"))
+
+
+FLAGS = FeatureFlags.from_env()
 
 
 def enable(flag: str) -> None:

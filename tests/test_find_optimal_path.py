@@ -5,7 +5,7 @@ from pathlib import Path
 # Ensure the src directory is on the path for imports
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
-from psd import find_optimal_path  # noqa: E402
+from psd import GraphConfig, find_optimal_path  # noqa: E402
 
 
 class TestFindOptimalPath(unittest.TestCase):
@@ -52,6 +52,16 @@ class TestFindOptimalPath(unittest.TestCase):
         }
         with self.assertRaises(OverflowError):
             find_optimal_path(graph, "A", "C")
+
+    def test_custom_config_overrides_max_weight(self):
+        graph = {"A": {"B": 1e6}, "B": {"C": 1e6}, "C": {}}
+        cfg = GraphConfig(max_path_weight=1e6)
+        with self.assertRaises(OverflowError):
+            find_optimal_path(graph, "A", "C", config=cfg)
+
+    def test_graph_config_validation(self):
+        with self.assertRaises(ValueError):
+            GraphConfig(max_path_weight=-1.0)
 
     def test_large_graph(self):
         # Construct a linear DAG A0 -> A1 -> ... -> A999 -> A1000

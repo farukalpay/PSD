@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import logging
 from collections import deque
+from dataclasses import dataclass
 from math import isfinite
 from time import perf_counter
 from typing import Any, Dict, List, Tuple
@@ -21,11 +22,25 @@ logger = logging.getLogger(__name__)
 Graph = Dict[Any, Dict[Any, float]]
 """Type alias for an adjacency list representing a weighted directed graph."""
 
-MAX_PATH_WEIGHT = 1e12
-"""Maximum allowable weight for any path to guard against overflow."""
+
+@dataclass(frozen=True)
+class GraphConfig:
+    """Configuration options for :func:`find_optimal_path`.
+
+    Attributes
+    ----------
+    max_path_weight:
+        Maximum allowable weight for any path to guard against overflow.
+    """
+
+    max_path_weight: float = 1e12
+
+    def __post_init__(self) -> None:  # pragma: no cover - simple validation
+        if not isfinite(self.max_path_weight) or self.max_path_weight <= 0:
+            raise ValueError("max_path_weight must be positive and finite")
 
 
-def _validate_graph(graph: Graph, start: Any, end: Any) -> None:
+def _validate_graph(graph: Graph, start: Any, end: Any, config: GraphConfig) -> None:
     """Validate graph structure and ensure non-negative, finite edge weights.
 
     Parameters
@@ -43,7 +58,7 @@ def _validate_graph(graph: Graph, start: Any, end: Any) -> None:
         dictionaries, or if any edge has a negative or excessively large
         weight.
     OverflowError
-        If an edge weight exceeds :data:`MAX_PATH_WEIGHT` or is not finite.
+        If an edge weight exceeds ``config.max_path_weight`` or is not finite.
     """
 
     if start not in graph or end not in graph:
@@ -55,7 +70,7 @@ def _validate_graph(graph: Graph, start: Any, end: Any) -> None:
         for neighbour, weight in neighbours.items():
             if weight < 0:
                 raise ValueError("Graph contains negative edge weights.")
-            if not isfinite(weight) or weight > MAX_PATH_WEIGHT:
+            if not isfinite(weight) or weight > config.max_path_weight:
                 raise OverflowError("Edge weight exceeds safe maximum.")
 
 
@@ -125,7 +140,13 @@ def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[An
     return path
 
 
-def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
+def find_optimal_path(
+    graph: Graph,
+    start: Any,
+    end: Any,
+    *,
+    config: GraphConfig | None = None,
+) -> List[Any]:
     """Find the shortest path from ``start`` to ``end`` in a DAG.
 
     The graph is represented as an adjacency list mapping each node to a
@@ -156,13 +177,14 @@ def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
         ``end`` is not present in the graph, or if no path exists between the
         two nodes.
     OverflowError
-        If the accumulated path weight exceeds :data:`MAX_PATH_WEIGHT` or is not
-        finite.
+        If the accumulated path weight exceeds ``config.max_path_weight`` or is
+        not finite.
     """
 
     start_time = perf_counter()
     try:
-        _validate_graph(graph, start, end)
+        cfg = GraphConfig() if config is None else config
+        _validate_graph(graph, start, end, cfg)
         order = _topological_sort(graph)
         distances, previous = _initialize_state(graph, start)
 
@@ -172,7 +194,7 @@ def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
                 continue
             for neighbour, weight in graph.get(node, {}).items():
                 new_dist = current_dist + weight
-                if not isfinite(new_dist) or new_dist > MAX_PATH_WEIGHT:
+                if not isfinite(new_dist) or new_dist > cfg.max_path_weight:
                     raise OverflowError("Path weight exceeds safe maximum.")
                 if new_dist < distances.get(neighbour, float("inf")):
                     distances[neighbour] = new_dist
@@ -187,4 +209,4 @@ def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
         logger.info("find_optimal_path executed in %.6f seconds", duration)
 
 
-__all__ = ["find_optimal_path"]
+__all__ = ["find_optimal_path", "GraphConfig"]
