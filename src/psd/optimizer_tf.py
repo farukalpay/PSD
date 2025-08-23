@@ -10,7 +10,7 @@ escape saddle points.
 from __future__ import annotations
 
 # mypy: ignore-errors
-from typing import Dict, Iterable, Optional, Tuple
+from collections.abc import Iterable
 
 import tensorflow as tf
 
@@ -59,7 +59,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         self,
         grad: tf.Tensor,
         var: tf.Variable,
-        apply_state: Optional[Dict[str, object]] = None,
+        apply_state: dict[str, object] | None = None,
     ) -> None:
         lr_t = tf.cast(self._decayed_lr(var.dtype), var.dtype)
         var.assign_sub(grad * lr_t)
@@ -69,15 +69,15 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         grad: tf.Tensor,
         var: tf.Variable,
         indices: tf.Tensor,
-        apply_state: Optional[Dict[str, object]] = None,
+        apply_state: dict[str, object] | None = None,
     ) -> None:
         lr_t = tf.cast(self._decayed_lr(var.dtype), var.dtype)
         var.scatter_sub(tf.IndexedSlices(grad * lr_t, indices))
 
     def apply_gradients(
         self,
-        grads_and_vars: Iterable[Tuple[tf.Tensor, tf.Variable]],
-        name: Optional[str] = None,
+        grads_and_vars: Iterable[tuple[tf.Tensor, tf.Variable]],
+        name: str | None = None,
         **kwargs: object,
     ) -> None:
         grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
@@ -85,7 +85,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
             super().apply_gradients(grads_and_vars, name, **kwargs)
             return None
 
-        grads, vars = zip(*grads_and_vars)
+        grads, vars = zip(*grads_and_vars, strict=False)
 
         # Compute global gradient norm across all tensors.
         sq_norms: list[tf.Tensor] = []
@@ -103,7 +103,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         step = tf.identity(self.iterations)
         need_perturb = tf.logical_and(global_norm <= g_thres, (step - self.t_noise) > t_thres)
 
-        def perturb_vars():
+        def perturb_vars() -> None:
             for v in vars:
                 v_dtype = v.dtype.base_dtype
                 noise = tf.random.normal(tf.shape(v), dtype=v_dtype)
@@ -118,8 +118,8 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         super().apply_gradients(grads_and_vars, name, **kwargs)
         return None
 
-    def get_config(self) -> Dict[str, object]:
-        config: Dict[str, object] = super().get_config()
+    def get_config(self) -> dict[str, object]:
+        config: dict[str, object] = super().get_config()
         config.update(
             {
                 "learning_rate": self._serialize_hyperparameter("learning_rate"),

@@ -11,7 +11,8 @@ length and step size.
 from __future__ import annotations
 
 import warnings
-from typing import Any, Callable, Optional, Tuple
+from collections.abc import Callable
+from typing import Any, cast
 
 import numpy as np
 
@@ -25,7 +26,7 @@ def gradient_descent(
     step_size: float = 0.1,
     tol: float = 1e-6,
     max_iter: int = 10000,
-) -> Tuple[np.ndarray, int]:
+) -> tuple[np.ndarray, int]:
     """Perform basic gradient descent.
 
     Parameters
@@ -67,9 +68,9 @@ def psd(
     delta: float = 0.1,
     delta_f: float = 1.0,
     max_iter: int = 100000,
-    random_state: Optional[np.random.Generator] = None,
-    config: Optional[PSDConfig] = None,
-) -> Tuple[np.ndarray, int]:
+    random_state: np.random.Generator | None = None,
+    config: PSDConfig | None = None,
+) -> tuple[np.ndarray, int]:
     """Perturbed Saddle‑escape Descent (PSD).
 
     This implementation follows the algorithm described in the manuscript
@@ -189,8 +190,8 @@ def psgd(
     delta_fp: float = 0.1,
     delta: float = 0.1,
     delta_f: float = 1.0,
-    random_state: Optional[np.random.Generator] = None,
-) -> Tuple[np.ndarray, int]:
+    random_state: np.random.Generator | None = None,
+) -> tuple[np.ndarray, int]:
     """Perturbed stochastic gradient descent.
 
     This variant uses a noise proxy to choose the batch size and avoids
@@ -284,8 +285,8 @@ def psd_probe(
     rho: float,
     delta: float = 0.1,
     delta_f: float = 1.0,
-    random_state: Optional[np.random.Generator] = None,
-) -> Tuple[np.ndarray, int]:
+    random_state: np.random.Generator | None = None,
+) -> tuple[np.ndarray, int]:
     """Finite‑difference variant of PSD (PSD‑Probe).
 
     This implementation uses a probing step to detect negative curvature
@@ -341,7 +342,7 @@ def psd_probe(
         return x, grad_evals
 
 
-def deprecated_psd(*args: Any, **kwargs: Any) -> Tuple[np.ndarray, int]:
+def deprecated_psd(*args: object, **kwargs: object) -> tuple[np.ndarray, int]:
     """Deprecated alias for :func:`psd`.
 
     This function will be removed in a future release.  Use :func:`psd`
@@ -354,7 +355,7 @@ def deprecated_psd(*args: Any, **kwargs: Any) -> Tuple[np.ndarray, int]:
         DeprecationWarning,
         stacklevel=2,
     )
-    return psd(*args, **kwargs)
+    return psd(*cast(tuple[Any, ...], args), **cast(dict[str, Any], kwargs))
 
 
 __all__ = [

@@ -1,4 +1,3 @@
-import importlib
 import sys
 from pathlib import Path
 
@@ -11,7 +10,7 @@ from psd import algorithms
 from psd.config import PSDConfig
 
 
-def test_env_var_enables_flag(monkeypatch):
+def test_env_var_enables_flag(monkeypatch: pytest.MonkeyPatch) -> None:
     from psd.feature_flags import FeatureFlags
 
     monkeypatch.setenv("PSD_NEW_ESCAPE_CONDITION", "1")
@@ -19,13 +18,13 @@ def test_env_var_enables_flag(monkeypatch):
     assert flags.new_escape_condition is True
 
 
-def test_new_escape_condition_changes_step_size():
+def test_new_escape_condition_changes_step_size() -> None:
     import psd.feature_flags as ff
 
-    def grad(x):
+    def grad(x: np.ndarray) -> np.ndarray:
         return x
 
-    def hess(x):
+    def hess(x: np.ndarray) -> np.ndarray:
         return np.eye(len(x))
 
     x0 = np.array([1.0])

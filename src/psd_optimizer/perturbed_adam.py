@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable, Optional, Tuple
+from collections.abc import Callable, Iterable
 
 import torch
 from torch import Tensor
 from torch.optim.optimizer import Optimizer
 
 
-class PerturbedAdam(Optimizer):  # type: ignore[misc]
+class PerturbedAdam(Optimizer):
     r"""Adam optimizer with gradient-based perturbations to escape saddle points.
 
     This optimizer merges the adaptive moment estimation of :class:`~torch.optim.Adam`
@@ -46,18 +46,18 @@ class PerturbedAdam(Optimizer):  # type: ignore[misc]
         self,
         params: Iterable[torch.nn.Parameter],
         lr: float = 1e-3,
-        betas: Tuple[float, float] = (0.9, 0.999),
+        betas: tuple[float, float] = (0.9, 0.999),
         eps: float = 1e-8,
         g_thres: float = 1e-3,
         t_thres: int = 10,
         r: float = 1e-3,
     ) -> None:
         if lr <= 0:
-            raise ValueError("Invalid learning rate: {}".format(lr))
+            raise ValueError(f"Invalid learning rate: {lr}")
         if not 0.0 <= betas[0] < 1.0 or not 0.0 <= betas[1] < 1.0:
-            raise ValueError("Invalid beta parameters: {}".format(betas))
+            raise ValueError(f"Invalid beta parameters: {betas}")
         if eps <= 0:
-            raise ValueError("Invalid epsilon value: {}".format(eps))
+            raise ValueError(f"Invalid epsilon value: {eps}")
         if g_thres <= 0:
             raise ValueError("g_thres must be positive")
         if t_thres <= 0:
@@ -75,8 +75,8 @@ class PerturbedAdam(Optimizer):  # type: ignore[misc]
         )
         super().__init__(params, defaults)
 
-    @torch.no_grad()  # type: ignore[misc]
-    def step(self, closure: Optional[Callable[[], Tensor]] = None) -> Optional[Tensor]:
+    @torch.no_grad()
+    def step(self, closure: Callable[[], Tensor] | None = None) -> Tensor | None:  # type: ignore[override]
         """Perform a single optimization step.
 
         The method follows the usual Adam update rule.  Additionally, it monitors
@@ -86,9 +86,9 @@ class PerturbedAdam(Optimizer):  # type: ignore[misc]
         noise and the internal moment estimates are reset to zero.
         """
 
-        loss: Optional[Tensor] = None
+        loss: Tensor | None = None
         if closure is not None:
-            with torch.enable_grad():
+            with torch.enable_grad():  # type: ignore[no-untyped-call]
                 loss = closure()
 
         for group in self.param_groups:

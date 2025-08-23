@@ -55,8 +55,10 @@ module = ["torch", "torch.*", "tensorflow", "tensorflow.*", "optuna", "matplotli
 ignore_missing_imports = true
 
 [tool.ruff]
-select = ["E", "F", "I"]
 src = ["src", "tests"]
-target-version = "py38"
+target-version = "py311"
 line-length = 120
 exclude = ["examples", "notebooks", "scripts", "experiments.py", "results", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ANN"]

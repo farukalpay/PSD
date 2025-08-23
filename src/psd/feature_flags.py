@@ -11,7 +11,7 @@ class FeatureFlags:
     new_escape_condition: bool = False
 
     @classmethod
-    def from_env(cls) -> "FeatureFlags":
+    def from_env(cls) -> FeatureFlags:
         """Create flags based on environment variables."""
 
         def _env_true(name: str, default: bool = False) -> bool:
