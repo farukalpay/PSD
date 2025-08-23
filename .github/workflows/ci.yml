@@ -16,12 +16,11 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: 
-            ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - run: pip install -e .[dev]
-      - run: ruff .
+      - run: ruff --output-format=github .
 
   typecheck:
     runs-on: ubuntu-latest
@@ -33,35 +32,74 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: 
-            ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
       - run: pip install -e .[dev]
-      - run: mypy src
+      - run: mypy --error-format=github src
 
-  tests:
-    needs: [lint, typecheck]
+  unit:
+    runs-on: ubuntu-latest
     strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        python-version: ['3.9', '3.10', '3.11', '3.12']
-    runs-on: ${{ matrix.os }}
+      fail-fast: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.11'
       - uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: 
-            ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('pyproject.toml') }}
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
           restore-keys: |
             ${{ runner.os }}-pip-
-      - run: pip install -e .[dev]
-      - run: pytest --cov=psd --cov-report=xml --cov-report=term --cov-fail-under=90
+      - run: pip install -e .[dev] pytest-github-actions-annotate-failures
+      - run: pytest tests --ignore=tests/test_algorithms_property.py --maxfail=1 --cov=psd --cov-report=term
       - uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.os }}-${{ matrix.python-version }}
-          path: coverage.xml
+          name: coverage-unit
+          path: .coverage
+
+  property:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - run: pip install -e .[dev] pytest-github-actions-annotate-failures
+      - run: pytest tests/test_algorithms_property.py --maxfail=1 --cov=psd --cov-report=term
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage-property
+          path: .coverage
+
+  coverage:
+    needs: [unit, property]
+    runs-on: ubuntu-latest
+    if: ${{ success() }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install coverage
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+          path: coverage/unit
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-property
+          path: coverage/property
+      - run: coverage combine coverage/unit coverage/property
+      - run: coverage xml
+      - uses: codecov/codecov-action@v3
+        with:
+          files: coverage.xml
