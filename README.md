@@ -49,6 +49,16 @@ pip install psd-optimizer
 Example training scripts for MNIST and CIFAR‑10 using this optimizer are
 available in the ``examples/`` directory.
 
+## CIFAR-10 Benchmarking
+
+To compare PSD with SGD and Adam on CIFAR-10 run:
+
+```bash
+python scripts/run_benchmark.py --epochs 20
+```
+
+The script trains a small CNN with each optimizer and writes high-resolution loss and accuracy plots to `results/`.
+
 ## Running the Experiments
 
 All experiments can be reproduced by executing the following command from
