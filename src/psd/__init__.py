@@ -7,7 +7,7 @@ from importlib.metadata import PackageNotFoundError, version
 from . import algorithms, functions
 from .config import PSDConfig
 from .feature_flags import FLAGS, FeatureFlags, disable, enable
-from .graph import find_optimal_path
+from .graph import GraphConfig, find_optimal_path
 
 try:  # Optional framework-specific optimisers
     from .framework_optimizers import PSDTensorFlow, PSDTorch
@@ -24,6 +24,7 @@ __all__ = [
     "algorithms",
     "functions",
     "find_optimal_path",
+    "GraphConfig",
     "PSDConfig",
     "FeatureFlags",
     "FLAGS",
