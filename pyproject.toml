@@ -66,3 +66,9 @@ exclude = ["examples", "notebooks", "scripts", "experiments.py", "results", "dat
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+markers = [
+    "fast: quick tests for deterministic routines",
+    "slow: exhaustive or computationally heavy tests",
+]
