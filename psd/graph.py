@@ -1,16 +1,19 @@
-"""Graph utilities including Dijkstra's shortest path algorithm.
+"""Graph utilities for computing shortest paths in directed acyclic graphs.
 
-This module provides helper functions that collectively implement Dijkstra's
-algorithm. The main entry point is :func:`find_optimal_path` which validates the
-input graph, executes the search and reconstructs the shortest path.
+The implementation targets large graphs by using a topological traversal
+instead of Dijkstra's algorithm.  The main entry point is
+:func:`find_optimal_path` which validates the input graph, executes the search
+and reconstructs the shortest path.  Graphs that contain cycles are rejected
+early to avoid potentially expensive computations on invalid inputs.
 """
 
 from __future__ import annotations
 
-from heapq import heappop, heappush
+from collections import deque
+from math import isfinite
 from time import perf_counter
 import logging
-from typing import Any, Dict, List, Tuple, Set
+from typing import Any, Dict, List, Tuple
 
 
 logger = logging.getLogger(__name__)
@@ -19,12 +22,12 @@ logger = logging.getLogger(__name__)
 Graph = Dict[Any, Dict[Any, float]]
 """Type alias for an adjacency list representing a weighted directed graph."""
 
-PriorityQueue = List[Tuple[float, Any]]
-"""Type alias for the priority queue used by Dijkstra's algorithm."""
+MAX_PATH_WEIGHT = 1e12
+"""Maximum allowable weight for any path to guard against overflow."""
 
 
 def _validate_graph(graph: Graph, start: Any, end: Any) -> None:
-    """Validate graph structure and ensure non-negative edge weights.
+    """Validate graph structure and ensure non-negative, finite edge weights.
 
     Parameters
     ----------
@@ -38,7 +41,10 @@ def _validate_graph(graph: Graph, start: Any, end: Any) -> None:
     ------
     ValueError
         If the start or end node is missing, adjacency lists are not
-        dictionaries, or if any edge has a negative weight.
+        dictionaries, or if any edge has a negative or excessively large
+        weight.
+    OverflowError
+        If an edge weight exceeds :data:`MAX_PATH_WEIGHT` or is not finite.
     """
 
     if start not in graph or end not in graph:
@@ -50,34 +56,47 @@ def _validate_graph(graph: Graph, start: Any, end: Any) -> None:
         for neighbour, weight in neighbours.items():
             if weight < 0:
                 raise ValueError("Graph contains negative edge weights.")
+            if not isfinite(weight) or weight > MAX_PATH_WEIGHT:
+                raise OverflowError("Edge weight exceeds safe maximum.")
 
 
-def _initialize_state(graph: Graph, start: Any) -> Tuple[Dict[Any, float], Dict[Any, Any], PriorityQueue]:
-    """Initialise distance estimates, predecessor map and the priority queue."""
+def _initialize_state(graph: Graph, start: Any) -> Tuple[Dict[Any, float], Dict[Any, Any]]:
+    """Initialise distance estimates and predecessor map."""
 
     distances: Dict[Any, float] = {node: float("inf") for node in graph}
     previous: Dict[Any, Any] = {}
     distances[start] = 0.0
-    heap: PriorityQueue = [(0.0, start)]
-    return distances, previous, heap
+    return distances, previous
 
 
-def _relax_neighbours(
-    graph: Graph,
-    node: Any,
-    current_dist: float,
-    distances: Dict[Any, float],
-    previous: Dict[Any, Any],
-    heap: PriorityQueue,
-) -> None:
-    """Relax edges from ``node`` updating ``distances`` and ``previous`` maps."""
+def _topological_sort(graph: Graph) -> List[Any]:
+    """Return a topological ordering of ``graph`` or raise ``ValueError``.
 
-    for neighbour, weight in graph.get(node, {}).items():
-        new_dist = current_dist + weight
-        if new_dist < distances.get(neighbour, float("inf")):
-            distances[neighbour] = new_dist
-            previous[neighbour] = node
-            heappush(heap, (new_dist, neighbour))
+    The function performs Kahn's algorithm while ensuring that all nodes are
+    included in the ordering.  A ``ValueError`` is raised if the graph contains
+    a cycle which would prevent such an ordering.
+    """
+
+    indegree: Dict[Any, int] = {node: 0 for node in graph}
+    for node, neighbours in graph.items():
+        for neighbour in neighbours:
+            indegree.setdefault(neighbour, 0)
+            indegree[neighbour] += 1
+
+    queue: deque[Any] = deque([n for n, d in indegree.items() if d == 0])
+    order: List[Any] = []
+    while queue:
+        node = queue.popleft()
+        order.append(node)
+        for neighbour in graph.get(node, {}):
+            indegree[neighbour] -= 1
+            if indegree[neighbour] == 0:
+                queue.append(neighbour)
+
+    if len(order) != len(indegree):
+        raise ValueError("Graph must be a directed acyclic graph (DAG).")
+
+    return order
 
 
 def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[Any]:
@@ -91,10 +110,13 @@ def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[An
 
 
 def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
-    """Find the shortest path from ``start`` to ``end`` using Dijkstra's algorithm.
+    """Find the shortest path from ``start`` to ``end`` in a DAG.
 
     The graph is represented as an adjacency list mapping each node to a
-    dictionary of neighbouring nodes and their corresponding edge weights.
+    dictionary of neighbouring nodes and their corresponding edge weights.  The
+    function assumes the graph is a **directed acyclic graph (DAG)** and uses a
+    topological ordering to compute the optimal path in linear time relative to
+    the number of nodes and edges, making it suitable for large graphs.
 
     Parameters
     ----------
@@ -114,24 +136,31 @@ def find_optimal_path(graph: Graph, start: Any, end: Any) -> List[Any]:
     Raises
     ------
     ValueError
-        If the graph contains negative edge weights, if ``start`` or ``end`` is
-        not present in the graph, or if no path exists between the two nodes.
+        If the graph contains negative edge weights, cycles, if ``start`` or
+        ``end`` is not present in the graph, or if no path exists between the
+        two nodes.
+    OverflowError
+        If the accumulated path weight exceeds :data:`MAX_PATH_WEIGHT` or is not
+        finite.
     """
 
     start_time = perf_counter()
     try:
         _validate_graph(graph, start, end)
-        distances, previous, heap = _initialize_state(graph, start)
-        visited: Set[Any] = set()
+        order = _topological_sort(graph)
+        distances, previous = _initialize_state(graph, start)
 
-        while heap:
-            current_dist, node = heappop(heap)
-            if node in visited:
+        for node in order:
+            current_dist = distances.get(node, float("inf"))
+            if current_dist == float("inf"):
                 continue
-            visited.add(node)
-            if node == end:
-                break
-            _relax_neighbours(graph, node, current_dist, distances, previous, heap)
+            for neighbour, weight in graph.get(node, {}).items():
+                new_dist = current_dist + weight
+                if not isfinite(new_dist) or new_dist > MAX_PATH_WEIGHT:
+                    raise OverflowError("Path weight exceeds safe maximum.")
+                if new_dist < distances.get(neighbour, float("inf")):
+                    distances[neighbour] = new_dist
+                    previous[neighbour] = node
 
         if distances.get(end, float("inf")) == float("inf"):
             raise ValueError(f"No path from {start!r} to {end!r}.")
