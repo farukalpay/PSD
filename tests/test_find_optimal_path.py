@@ -35,6 +35,33 @@ class TestFindOptimalPath(unittest.TestCase):
         with self.assertRaises(ValueError):
             find_optimal_path(self.graph, 'A', 'Z')
 
+    def test_cycle_graph_raises(self):
+        graph = {
+            'A': {'B': 1},
+            'B': {'C': 2},
+            'C': {'A': 3},
+        }
+        with self.assertRaises(ValueError):
+            find_optimal_path(graph, 'A', 'C')
+
+    def test_large_path_weight_raises(self):
+        graph = {
+            'A': {'B': 6e11},
+            'B': {'C': 6e11},
+            'C': {},
+        }
+        with self.assertRaises(OverflowError):
+            find_optimal_path(graph, 'A', 'C')
+
+    def test_large_graph(self):
+        # Construct a linear DAG A0 -> A1 -> ... -> A999 -> A1000
+        graph = {str(i): {str(i + 1): 1} for i in range(1000)}
+        graph[str(1000)] = {}
+        path = find_optimal_path(graph, '0', '1000')
+        self.assertEqual(len(path), 1001)
+        self.assertEqual(path[0], '0')
+        self.assertEqual(path[-1], '1000')
+
     def test_logs_execution_time(self):
         with self.assertLogs('psd.graph', level='INFO') as cm:
             find_optimal_path(self.graph, 'A', 'D')
