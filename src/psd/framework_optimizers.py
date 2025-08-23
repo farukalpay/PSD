@@ -48,7 +48,7 @@ from __future__ import annotations
 # mypy: ignore-errors
 import logging
 import math
-from typing import Callable, Iterable, List, Optional, Tuple
+from collections.abc import Callable, Iterable
 
 try:  # Optional import for environments without PyTorch
     import torch
@@ -61,7 +61,7 @@ except Exception:  # pragma: no cover - fallback when tensorflow is unavailable
     tf = None  # type: ignore[assignment]
 
 
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
@@ -98,7 +98,7 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
         g_thres: float = 1e-3,
         t_thres: int = 10,
         r: float = 1e-3,
-        max_grad_norm: Optional[float] = 1.0,
+        max_grad_norm: float | None = 1.0,
         **kwargs: object,
     ) -> None:
         if torch is None:  # pragma: no cover - ensures clear error if torch missing
@@ -114,7 +114,7 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
         super().__init__(params, defaults, **kwargs)
 
     @torch.no_grad()  # type: ignore[misc]
-    def step(self, closure: Optional[Callable[[], float]] = None) -> Optional[float]:
+    def step(self, closure: Callable[[], float] | None = None) -> float | None:
         """Perform a single optimization step.
 
         Parameters
@@ -130,7 +130,7 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
                 loss = closure()
 
         for group in self.param_groups:
-            params: List[torch.nn.Parameter] = [p for p in group["params"] if p.grad is not None]
+            params: list[torch.nn.Parameter] = [p for p in group["params"] if p.grad is not None]
             if not params:
                 continue
 
@@ -217,7 +217,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         t_thres: int = 10,
         r: float = 1e-3,
         name: str = "PSDTensorFlow",
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         if tf is None:  # pragma: no cover - ensures clear error if TF missing
             raise ImportError("TensorFlow is required to use PSDTensorFlow")
@@ -227,7 +227,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
         self._set_hyper("t_thres", float(t_thres))
         self._set_hyper("r", r)
 
-    def _create_slots(self, var_list: List[tf.Variable]) -> None:  # pragma: no cover - TF specific
+    def _create_slots(self, var_list: list[tf.Variable]) -> None:  # pragma: no cover - TF specific
         for var in var_list:
             # ``t_noise`` stores the iteration of the last perturbation.  It is
             # initialised to a very negative value so that a perturbation is
@@ -237,10 +237,10 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
     @tf.function
     def apply_gradients(
         self,
-        grads_and_vars: Iterable[Tuple[tf.Tensor, tf.Variable]],
-        name: Optional[str] = None,
-        **kwargs,
-    ):  # pragma: no cover - TF specific
+        grads_and_vars: Iterable[tuple[tf.Tensor, tf.Variable]],
+        name: str | None = None,
+        **kwargs: object,
+    ) -> None:  # pragma: no cover - TF specific
         grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
         if not grads_and_vars:
             return

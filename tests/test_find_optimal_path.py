@@ -9,7 +9,7 @@ from psd import find_optimal_path  # noqa: E402
 
 
 class TestFindOptimalPath(unittest.TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.graph = {
             "A": {"B": 1, "C": 4},
             "B": {"C": 2, "D": 5},
@@ -17,25 +17,25 @@ class TestFindOptimalPath(unittest.TestCase):
             "D": {},
         }
 
-    def test_shortest_path(self):
+    def test_shortest_path(self) -> None:
         path = find_optimal_path(self.graph, "A", "D")
         self.assertEqual(path, ["A", "B", "C", "D"])
 
-    def test_negative_weight_raises(self):
+    def test_negative_weight_raises(self) -> None:
         graph = {"A": {"B": -1}, "B": {}}
         with self.assertRaises(ValueError):
             find_optimal_path(graph, "A", "B")
 
-    def test_disconnected_nodes_raise(self):
+    def test_disconnected_nodes_raise(self) -> None:
         graph = {"A": {"B": 1}, "B": {}, "C": {}}
         with self.assertRaises(ValueError):
             find_optimal_path(graph, "A", "C")
 
-    def test_missing_node_raises(self):
+    def test_missing_node_raises(self) -> None:
         with self.assertRaises(ValueError):
             find_optimal_path(self.graph, "A", "Z")
 
-    def test_cycle_graph_raises(self):
+    def test_cycle_graph_raises(self) -> None:
         graph = {
             "A": {"B": 1},
             "B": {"C": 2},
@@ -44,7 +44,7 @@ class TestFindOptimalPath(unittest.TestCase):
         with self.assertRaises(ValueError):
             find_optimal_path(graph, "A", "C")
 
-    def test_large_path_weight_raises(self):
+    def test_large_path_weight_raises(self) -> None:
         graph = {
             "A": {"B": 6e11},
             "B": {"C": 6e11},
@@ -53,7 +53,7 @@ class TestFindOptimalPath(unittest.TestCase):
         with self.assertRaises(OverflowError):
             find_optimal_path(graph, "A", "C")
 
-    def test_large_graph(self):
+    def test_large_graph(self) -> None:
         # Construct a linear DAG A0 -> A1 -> ... -> A999 -> A1000
         graph = {str(i): {str(i + 1): 1} for i in range(1000)}
         graph[str(1000)] = {}
@@ -62,7 +62,7 @@ class TestFindOptimalPath(unittest.TestCase):
         self.assertEqual(path[0], "0")
         self.assertEqual(path[-1], "1000")
 
-    def test_logs_execution_time(self):
+    def test_logs_execution_time(self) -> None:
         with self.assertLogs("psd.graph", level="INFO") as cm:
             find_optimal_path(self.graph, "A", "D")
         self.assertTrue(

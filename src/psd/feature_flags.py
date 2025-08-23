@@ -10,7 +10,7 @@ class FeatureFlags:
     new_escape_condition: bool = False
 
 
-FLAGS = FeatureFlags()
+FLAGS: FeatureFlags = FeatureFlags()
 
 
 def enable(flag: str) -> None:

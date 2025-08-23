@@ -9,8 +9,8 @@ dataclass and registered in :data:`TEST_FUNCTIONS` for convenient access.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Dict
 
 import numpy as np
 
@@ -322,7 +322,7 @@ ROSENBROCK = TestFunction(
     hess=rosenbrock_hess,
 )
 
-TEST_FUNCTIONS: Dict[str, TestFunction] = {
+TEST_FUNCTIONS: dict[str, TestFunction] = {
     "separable_quartic": SEPARABLE_QUARTIC,
     "coupled_quartic": COUPLED_QUARTIC,
     "rosenbrock": ROSENBROCK,

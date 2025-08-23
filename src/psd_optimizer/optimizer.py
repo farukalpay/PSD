@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable, Iterable, Optional
+from collections.abc import Callable, Iterable
 
 import torch
 from torch import Tensor
@@ -31,7 +31,7 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
         epsilon: float = 1e-3,
         r: float = 1e-3,
         T: int = 10,
-        max_grad_norm: Optional[float] = 1.0,
+        max_grad_norm: float | None = 1.0,
         **kwargs: object,
     ) -> None:
         if lr <= 0:
@@ -39,7 +39,7 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
         defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T, max_grad_norm=max_grad_norm)
         super().__init__(params, defaults, **kwargs)
 
-    def step(self, closure: Optional[Callable[[], Tensor]] = None) -> Tensor:
+    def step(self, closure: Callable[[], Tensor] | None = None) -> Tensor:
         """Perform a single optimization step.
 
         Parameters
