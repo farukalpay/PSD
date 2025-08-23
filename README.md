@@ -80,6 +80,24 @@ opt.step(closure)
 Example scripts using this API are available in the `examples/`
 directory.
 
+## Documentation
+
+Further materials live in the `docs/` directory:
+
+* `PSD_Quickstart_Colab.ipynb` – an interactive notebook showcasing the optimiser.
+* `section_1_5_extension.md` – theoretical notes on extending PSD to stochastic settings.
+
+## Testing
+
+After installing the repository in editable mode, run the test suite to
+verify that everything works:
+
+```bash
+pytest
+```
+
+The current suite is small but helps prevent regressions.
+
 ## Repository Structure
 
 ```
