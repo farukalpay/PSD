@@ -1,0 +1,7 @@
+numpy
+torch
+torchvision
+optuna
+matplotlib
+pytest
+transformers

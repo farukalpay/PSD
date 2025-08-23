@@ -1,8 +1,12 @@
+import logging
 import math
 from typing import Iterable, Optional, Callable
 
 import torch
 from torch.optim.optimizer import Optimizer
+
+
+logger = logging.getLogger(__name__)
 
 
 class PSDOptimizer(Optimizer):
@@ -26,11 +30,13 @@ class PSDOptimizer(Optimizer):
         epsilon: float = 1e-3,
         r: float = 1e-3,
         T: int = 10,
+        max_grad_norm: Optional[float] = 1.0,
+        **kwargs,
     ) -> None:
         if lr <= 0:
             raise ValueError("Invalid learning rate")
-        defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T)
-        super().__init__(params, defaults)
+        defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T, max_grad_norm=max_grad_norm)
+        super().__init__(params, defaults, **kwargs)
 
     def step(self, closure: Optional[Callable[[], float]] = None):
         """Perform a single optimization step.
@@ -56,19 +62,45 @@ class PSDOptimizer(Optimizer):
         if not params:
             return loss
 
+        group = self.param_groups[0]
+        max_grad_norm = group.get('max_grad_norm')
+        if max_grad_norm is not None:
+            torch.nn.utils.clip_grad_norm_(params, max_grad_norm)
+
+        prev_params = [p.detach().clone() for p in params]
+
+        if any(not torch.isfinite(p.grad).all() for p in params):
+            for p, prev in zip(params, prev_params):
+                p.data.copy_(prev)
+            group['lr'] *= 0.5
+            logger.warning(
+                "Non-finite gradients detected. Reducing learning rate to %s and skipping update.",
+                group['lr'],
+            )
+            return loss
+
         grad_norm = torch.sqrt(sum(torch.sum(p.grad.detach() ** 2) for p in params))
-        eps = self.param_groups[0]['epsilon']
-        lr = self.param_groups[0]['lr']
+        eps = group['epsilon']
+        lr = group['lr']
 
         if grad_norm > eps:
             with torch.no_grad():
                 for p in params:
                     p.add_(p.grad, alpha=-lr)
+            for p, prev in zip(params, prev_params):
+                if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
+                    p.data.copy_(prev)
+                    group['lr'] *= 0.5
+                    logger.warning(
+                        "Non-finite values detected. Reducing learning rate to %s and skipping update.",
+                        group['lr'],
+                    )
+                    break
             return loss
 
         # Escape episode
-        r = self.param_groups[0]['r']
-        T = self.param_groups[0]['T']
+        r = group['r']
+        T = group['T']
         with torch.no_grad():
             for p in params:
                 noise = torch.randn_like(p) * r
@@ -76,8 +108,19 @@ class PSDOptimizer(Optimizer):
 
         for _ in range(T):
             loss = closure()
+            if max_grad_norm is not None:
+                torch.nn.utils.clip_grad_norm_(params, max_grad_norm)
             with torch.no_grad():
                 for p in params:
                     if p.grad is not None:
+                        prev = p.detach().clone()
                         p.add_(p.grad, alpha=-lr)
+                        if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
+                            p.data.copy_(prev)
+                            group['lr'] *= 0.5
+                            logger.warning(
+                                "Non-finite values detected during escape step. Reducing learning rate to %s and skipping update.",
+                                group['lr'],
+                            )
+                            return loss
         return loss
