@@ -8,9 +8,14 @@ escaping techniques.
 
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
+
 from .optimizer import PSDOptimizer
 from .perturbed_adam import PerturbedAdam
 
-__all__ = ["PSDOptimizer", "PerturbedAdam"]
+try:
+    __version__ = version("psd-optimizer")
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "0.0.0"
 
-__version__ = "0.1.0"
+__all__ = ["PSDOptimizer", "PerturbedAdam", "__version__"]
