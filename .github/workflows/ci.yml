@@ -55,7 +55,14 @@ jobs:
             ${{ runner.os }}-pip-
       - run: pip install -e .[dev] pytest-github-actions-annotate-failures
       - run: pytest tests --ignore=tests/test_algorithms_property.py --maxfail=1 --cov=psd --cov-report=term
-      - run: mv .coverage .coverage.unit
+      - name: Prepare coverage artifact
+        if: always()
+        run: |
+          if [ -f .coverage ]; then
+            mv .coverage .coverage.unit
+          else
+            touch .coverage.unit
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -77,7 +84,14 @@ jobs:
             ${{ runner.os }}-pip-
       - run: pip install -e .[dev] pytest-github-actions-annotate-failures
       - run: pytest tests/test_algorithms_property.py --maxfail=1 --cov=psd --cov-report=term
-      - run: mv .coverage .coverage.property
+      - name: Prepare coverage artifact
+        if: always()
+        run: |
+          if [ -f .coverage ]; then
+            mv .coverage .coverage.property
+          else
+            touch .coverage.property
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
