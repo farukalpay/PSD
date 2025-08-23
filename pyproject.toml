@@ -23,6 +23,8 @@ dev = [
     "mypy==1.10.0",
     "ruff==0.1.7",
     "pytest==7.4.4",
+    "pytest-cov==6.2.1",
+    "hypothesis==6.138.2",
 ]
 docs = [
     "sphinx==7.2.6",
