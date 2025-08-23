@@ -50,6 +50,22 @@ pip install -e .
 
 ## Usage
 
+### Using the Reference Algorithms
+
+The core PSD routines and test functions can be imported from the
+``psd`` package:
+
+```python
+import numpy as np
+from psd import algorithms, functions
+
+x0 = np.array([1.0, -1.0])
+x_star, _ = algorithms.gradient_descent(x0, functions.SEPARABLE_QUARTIC.grad)
+```
+
+This structure allows you to experiment with the reference NumPy
+implementations directly in your projects.
+
 ### Generating Synthetic Data
 
 ```bash
@@ -121,11 +137,11 @@ The current suite is small but helps prevent regressions.
 ## Repository Structure
 
 ```
-algorithms.py     # Reference implementations of PSD and baselines
-functions.py      # Analytic test functions and registry
-experiments.py    # Synthetic data generation
+psd/              # Reference implementations and framework-specific optimisers
+    algorithms.py # PSD and baseline algorithms
+    functions.py  # Analytic test functions and registry
 psd_optimizer/    # PyTorch optimiser package
-psd/              # Framework specific optimisers for Torch and TensorFlow
+experiments.py    # Synthetic data generation
 ```
 
 ## Contributing

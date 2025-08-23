@@ -21,4 +21,4 @@ dependencies = [
 Homepage = "https://github.com/farukalpay/PSD"
 
 [tool.setuptools.packages.find]
-include = ["psd_optimizer"]
+include = ["psd", "psd_optimizer"]
