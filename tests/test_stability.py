@@ -1,11 +1,7 @@
-import sys
-from pathlib import Path
-
 import pytest
 
 torch = pytest.importorskip("torch")
 
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 from psd_optimizer import PSDOptimizer  # noqa: E402
 
 

@@ -72,7 +72,7 @@ class PSDOptimizer(Optimizer):
         prev_params = [p.detach().clone() for p in params]
 
         if any(not torch.isfinite(p.grad).all() for p in params):
-            for p, prev in zip(params, prev_params, strict=False):
+            for p, prev in zip(params, prev_params):  # noqa: B905
                 p.data.copy_(prev)
             group["lr"] *= 0.5
             logger.warning(
@@ -90,7 +90,7 @@ class PSDOptimizer(Optimizer):
             with torch.no_grad():
                 for p in params:
                     p.add_(p.grad, alpha=-lr)
-            for p, prev in zip(params, prev_params, strict=False):
+            for p, prev in zip(params, prev_params):  # noqa: B905
                 if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
                     p.data.copy_(prev)
                     group["lr"] *= 0.5

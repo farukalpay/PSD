@@ -1,10 +1,5 @@
-import sys
-from pathlib import Path
-
 import numpy as np
 import pytest
-
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from psd import algorithms
 from psd.config import PSDConfig

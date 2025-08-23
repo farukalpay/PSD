@@ -1,11 +1,6 @@
-import sys
 import unittest
-from pathlib import Path
 
-# Ensure the src directory is on the path for imports
-sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
-
-from psd import GraphConfig, find_optimal_path  # noqa: E402
+from psd import GraphConfig, find_optimal_path
 
 
 class TestFindOptimalPath(unittest.TestCase):
