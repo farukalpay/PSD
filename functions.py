@@ -3,12 +3,25 @@
 This module defines a small collection of smooth non‑convex functions
 along with their gradients and Hessians.  These functions are used by
 `experiments.py` and can also be used independently for further
-experimentation.
+experimentation.  Each function triple is wrapped in the :class:`TestFunction`
+dataclass and registered in :data:`TEST_FUNCTIONS` for convenient access.
 """
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+from typing import Callable, Dict
+
 import numpy as np
+
+
+@dataclass(frozen=True)
+class TestFunction:
+    """Container holding value, gradient and Hessian callables for a function."""
+
+    value: Callable[[np.ndarray], float]
+    grad: Callable[[np.ndarray], np.ndarray]
+    hess: Callable[[np.ndarray], np.ndarray]
 
 ################################################################################
 # Separable quartic function
@@ -282,3 +295,32 @@ def random_quadratic_grad(x: np.ndarray, A: np.ndarray, b: np.ndarray) -> np.nda
 def random_quadratic_hess(A: np.ndarray) -> np.ndarray:
     """Hessian of the random quadratic function (constant)."""
     return A
+
+
+# ---------------------------------------------------------------------------
+# Convenience registry
+# ---------------------------------------------------------------------------
+
+SEPARABLE_QUARTIC = TestFunction(
+    value=separable_quartic,
+    grad=separable_quartic_grad,
+    hess=separable_quartic_hess,
+)
+
+COUPLED_QUARTIC = TestFunction(
+    value=coupled_quartic,
+    grad=coupled_quartic_grad,
+    hess=coupled_quartic_hess,
+)
+
+ROSENBROCK = TestFunction(
+    value=rosenbrock,
+    grad=rosenbrock_grad,
+    hess=rosenbrock_hess,
+)
+
+TEST_FUNCTIONS: Dict[str, TestFunction] = {
+    "separable_quartic": SEPARABLE_QUARTIC,
+    "coupled_quartic": COUPLED_QUARTIC,
+    "rosenbrock": ROSENBROCK,
+}

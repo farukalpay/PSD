@@ -42,6 +42,11 @@ class PSDOptimizer(Optimizer):
             A closure that re-evaluates the model and returns the loss.  This is
             required because the PSD escape episode may need to re-compute the
             gradients multiple times.
+
+        Returns
+        -------
+        float
+            The loss value evaluated by the provided ``closure``.
         """
         if closure is None:
             raise RuntimeError("PSDOptimizer requires a closure to evaluate the model")

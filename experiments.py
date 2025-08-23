@@ -260,6 +260,14 @@ def write_dat_files(directory: str, curves: dict[str, np.ndarray]) -> None:
 
 
 def main() -> None:
+    """Generate all synthetic data used in the manuscript.
+
+    The function orchestrates calls to the individual data generation
+    utilities defined in this module and writes their results to the
+    ``data/`` and ``results/`` directories relative to the repository
+    root.  The function has no return value and is intended to be invoked
+    as a script entry point.
+    """
     # Create output directories relative to script location
     script_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(script_dir, "data")
