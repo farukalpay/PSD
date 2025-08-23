@@ -32,7 +32,6 @@ class PSDOptimizer(Optimizer):
         defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T)
         super().__init__(params, defaults)
 
-    @torch.no_grad()
     def step(self, closure: Optional[Callable[[], float]] = None):
         """Perform a single optimization step.
 
@@ -51,6 +50,7 @@ class PSDOptimizer(Optimizer):
         if closure is None:
             raise RuntimeError("PSDOptimizer requires a closure to evaluate the model")
 
+        # Compute loss and gradients via the user-provided closure
         loss = closure()
         params = [p for group in self.param_groups for p in group['params'] if p.grad is not None]
         if not params:
@@ -61,20 +61,23 @@ class PSDOptimizer(Optimizer):
         lr = self.param_groups[0]['lr']
 
         if grad_norm > eps:
-            for p in params:
-                p.add_(p.grad, alpha=-lr)
+            with torch.no_grad():
+                for p in params:
+                    p.add_(p.grad, alpha=-lr)
             return loss
 
         # Escape episode
         r = self.param_groups[0]['r']
         T = self.param_groups[0]['T']
-        for p in params:
-            noise = torch.randn_like(p) * r
-            p.add_(noise)
+        with torch.no_grad():
+            for p in params:
+                noise = torch.randn_like(p) * r
+                p.add_(noise)
 
         for _ in range(T):
             loss = closure()
-            for p in params:
-                if p.grad is not None:
-                    p.add_(p.grad, alpha=-lr)
+            with torch.no_grad():
+                for p in params:
+                    if p.grad is not None:
+                        p.add_(p.grad, alpha=-lr)
         return loss
