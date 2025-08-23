@@ -4,4 +4,6 @@ torchvision
 optuna
 matplotlib
 pytest
+pytest-cov
+hypothesis
 transformers

@@ -1,0 +1,8 @@
+[run]
+omit =
+    src/psd/optimizer_tf.py
+    src/psd/framework_optimizers.py
+    src/psd/functions.py
+    src/psd/algorithms.py
+    src/psd_optimizer/optimizer.py
+    src/psd_optimizer/perturbed_adam.py
