@@ -9,9 +9,9 @@ Use the issue templates in [\.github/ISSUE_TEMPLATE](.github/ISSUE_TEMPLATE) whe
 ## Development Setup
 
 1. Create a virtual environment and install the project in editable mode:
-   ```bash
-   pip install -e .
-   ```
+    ```bash
+    pip install -e ".[dev]"
+    ```
 2. Run the test suite to ensure everything works:
    ```bash
    pytest

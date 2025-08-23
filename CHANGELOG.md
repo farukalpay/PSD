@@ -6,3 +6,4 @@
 - introduce a validated `PSDConfig` dataclass and runtime feature flags
 - add strict `mypy` and `ruff` via pre-commit hooks
 - provide deprecation stubs for future API changes
+- document import path changes for the new layout in `docs/migration.md`

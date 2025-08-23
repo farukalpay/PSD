@@ -45,7 +45,7 @@ Or install the repository in editable mode for development:
 ```bash
 git clone https://github.com/farukalpay/PSD.git
 cd PSD
-pip install -e .
+pip install -e ".[dev]"
 ```
 
 ## Usage
