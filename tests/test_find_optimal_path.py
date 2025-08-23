@@ -2,10 +2,12 @@ import sys
 import unittest
 from pathlib import Path
 
+# ruff: noqa: ANN101
 # Ensure the src directory is on the path for imports
 sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
 from psd import GraphConfig, find_optimal_path  # noqa: E402
+from psd.graph import _reconstruct_path  # noqa: E402
 
 
 class TestFindOptimalPath(unittest.TestCase):
@@ -79,6 +81,11 @@ class TestFindOptimalPath(unittest.TestCase):
             any("find_optimal_path executed in" in message for message in cm.output),
             msg="Expected log message with execution time",
         )
+
+    def test_reconstruct_path_detects_cycle(self) -> None:
+        previous = {"B": "C", "C": "B"}
+        with self.assertRaises(ValueError):
+            _reconstruct_path(previous, "A", "C")
 
 
 if __name__ == "__main__":

@@ -4,4 +4,7 @@ torchvision
 optuna
 matplotlib
 pytest
+hypothesis
+pytest-cov
+coverage-badge
 transformers

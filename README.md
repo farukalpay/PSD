@@ -1,5 +1,8 @@
 # Perturbed Saddle-escape Descent (PSD)
 
+[![CI](https://github.com/farukalpay/PSD/actions/workflows/ci.yml/badge.svg)](https://github.com/farukalpay/PSD/actions/workflows/ci.yml)
+![Coverage](./coverage.svg)
+
 ## Project Summary
 
 This repository implements the **Perturbed Saddle-escape Descent (PSD)**

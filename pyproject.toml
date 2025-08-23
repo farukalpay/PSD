@@ -23,6 +23,9 @@ dev = [
     "mypy==1.10.0",
     "ruff==0.1.7",
     "pytest==7.4.4",
+    "pytest-cov==4.1.0",
+    "hypothesis==6.91.2",
+    "coverage-badge==1.1.0",
 ]
 docs = [
     "sphinx==7.2.6",
@@ -62,3 +65,12 @@ exclude = ["examples", "notebooks", "scripts", "experiments.py", "results", "dat
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ANN"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "src/psd/algorithms.py",
+    "src/psd/framework_optimizers.py",
+    "src/psd/optimizer_tf.py",
+    "src/psd_optimizer/*",
+]
