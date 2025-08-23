@@ -1,110 +1,102 @@
-# PSD Project Repository
+# Perturbed Saddle-escape Descent (PSD)
 
-This repository contains the full implementation and experimental scripts for
-the **Perturbed Saddle‑escape Descent (PSD)** algorithm as described in our
-manuscript.  It is organised to be self‑contained and reproducible.
+## Project Summary
 
-## Overview
+This repository implements the **Perturbed Saddle-escape Descent (PSD)**
+algorithm for escaping saddle points in non-convex optimisation problems.
+It contains reference NumPy implementations, framework specific optimisers
+for PyTorch and TensorFlow, and utilities for reproducing the synthetic
+experiments reported in the accompanying manuscript.
 
-The PSD algorithm is a first‑order method designed to escape strict saddle
-points in non‑convex optimisation problems.  This repository includes:
+## Features
 
-* **`functions.py`** — implementations of the objective functions used in the
-  experiments (separable quartic, coupled quartic, Rosenbrock, and random
-  quadratic).
-* **`algorithms.py`** — a reference implementation of the PSD algorithm
-  together with simple baselines such as gradient descent (GD) and
-  stochastic gradient descent (SGD).  The implementation is kept generic
-  so that it can be applied to any function from `functions.py`.
-* **`experiments.py`** — scripts that generate all of the synthetic
-  experimental results reported in the manuscript.  Running this script
-  will produce the data sets in `data/` and summary CSV files in
-  `results/`.
-* **`data/`** — contains tab‑separated values for the neural network
-  training curves (`*.dat`) which are consumed directly by the LaTeX
-  figures.  These files are generated automatically by `experiments.py`.
-* **`results/`** — CSV files with high‑level metrics such as episode
-  lengths, per‑episode decreases, convergence iterations and noise
-  robustness.
+* Reference implementations of PSD, PSD-Probe and baseline gradient descent
+  variants in pure NumPy.
+* Suite of analytic test functions with gradients and Hessians.
+* Synthetic data generator producing the tables and figures used in the
+  paper (`experiments.py`).
+* Framework specific optimisers: `PSDTorch`, `PSDTensorFlow` and a
+  `PSDOptimizer`/`PerturbedAdam` package for PyTorch.
+* Example training scripts for MNIST and CIFAR-10.
 
-## Quickstart Notebook
+## Technology Stack
 
-For a hands‑on introduction, see the
-[10‑Minute Quickstart notebook](docs/PSD_Quickstart_Colab.ipynb). It
-visualises a classic saddle surface, implements a minimal **PSD‑Lite** with
-finite‑difference curvature probes, and shows how perturbations help escape
-when gradients vanish. The notebook relies only on standard Python, NumPy and
-Matplotlib and can be run locally or in Google Colab.
+The core project depends on the following libraries:
 
-## PyTorch Optimizer
+| Library | Purpose |
+| ------- | ------- |
+| `numpy` | numerical routines for reference implementations |
+| `torch`, `torchvision` | deep-learning framework and datasets |
+| `optuna` | hyper-parameter search utilities |
+| `matplotlib` | visualisation in notebooks |
 
-The repository now also exposes a small PyTorch package providing a
-``torch.optim.Optimizer`` implementation of PSD.  The package can be
-installed from PyPI:
+Python 3.8 or later is required.
+
+## Installation
+
+Install the published optimiser package:
 
 ```bash
 pip install psd-optimizer
 ```
 
-Example training scripts for MNIST and CIFAR‑10 using this optimizer are
-available in the ``examples/`` directory.
-
-## CIFAR-10 Benchmarking
-
-To compare PSD with SGD and Adam on CIFAR-10 run:
+Or install the repository in editable mode for development:
 
 ```bash
-python scripts/run_benchmark.py --epochs 20
+git clone https://github.com/farukalpay/PSD.git
+cd PSD
+pip install -e .
 ```
 
-The script trains a small CNN with each optimizer and writes high-resolution loss and accuracy plots to `results/`.
+## Usage
 
-## Running the Experiments
-
-All experiments can be reproduced by executing the following command from
-the root of this repository:
+### Generating Synthetic Data
 
 ```bash
 python experiments.py
 ```
 
-This script will generate synthetic yet realistic datasets for all of the
-figures and tables in the manuscript.  The synthetic data are sampled
-according to the theoretical predictions of the PSD algorithm and include
-appropriate noise to reflect variability across runs.  The output will be
-written to the `data/` and `results/` folders.
+The command writes CSV summaries to `results/` and training curves to
+`data/`.
 
-### Hardware and Environment
+### Training with the PyTorch Optimiser
 
-The experiments were carried out on a machine equipped with 4× NVIDIA A100
-GPUs (40 GB memory each) and 2× AMD EPYC 7742 CPUs (64 cores each), using
-Python 3.8.12, NumPy 1.21.2 and SciPy 1.7.1.  Although the core PSD
-implementation is provided here, the synthetic data generation is
-lightweight and does not require specialised hardware.
+```python
+from psd_optimizer import PSDOptimizer
 
-## Folder Structure
+model = ...
+opt = PSDOptimizer(model.parameters(), lr=1e-3)
+
+def closure():
+    opt.zero_grad()
+    output = model(x)
+    loss = criterion(output, y)
+    loss.backward()
+    return loss
+
+opt.step(closure)
+```
+
+Example scripts using this API are available in the `examples/`
+directory.
+
+## Repository Structure
 
 ```
-psd_project/
-├── README.md         # This file
-├── algorithms.py     # PSD algorithm implementation
-├── functions.py      # Test functions used in experiments
-├── experiments.py    # Script to generate synthetic experimental data
-├── data/             # Output of neural network training curves (.dat)
-└── results/          # CSV summaries of other experimental metrics
+algorithms.py     # Reference implementations of PSD and baselines
+functions.py      # Analytic test functions and registry
+experiments.py    # Synthetic data generation
+psd_optimizer/    # PyTorch optimiser package
+psd/              # Framework specific optimisers for Torch and TensorFlow
 ```
 
 ## Contributing
 
-We welcome contributions of all kinds. To get started, please read
-[CONTRIBUTING.md](CONTRIBUTING.md). By participating in this project, you
-agree to abide by the [Code of Conduct](CODE_OF_CONDUCT.md). Security issues
-should be reported privately as described in
-[SECURITY.md](SECURITY.md). For general questions, contact
-[alpay@lightcap.ai](mailto:alpay@lightcap.ai).
+Contributions are welcome!  Please open an issue or pull request on GitHub
+and see `CONTRIBUTING.md` for guidelines.  By participating you agree to
+abide by the `CODE_OF_CONDUCT.md`.
 
-## Licence
+## License
 
-This project is licensed under the [MIT License](LICENSE).  See the
-accompanying manuscript for a complete description of the algorithm and
-its theoretical guarantees.
+This project is released under the MIT License.  See `LICENSE` for details.
+
