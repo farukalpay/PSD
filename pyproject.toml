@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "psd-optimizer"
-version = "0.1.0"
+version = "0.1.1"
 description = "Perturbed Saddle-point Descent optimizer for PyTorch"
 authors = [{ name = "PSD Authors" }]
 license = { text = "MIT" }
