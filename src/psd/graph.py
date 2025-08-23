@@ -11,15 +11,15 @@ from __future__ import annotations
 
 import logging
 from collections import deque
+from collections.abc import Hashable
 from dataclasses import dataclass
 from math import isfinite
 from time import perf_counter
-from typing import Any, Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
 
-Graph = Dict[Any, Dict[Any, float]]
+Graph = dict[Hashable, dict[Hashable, float]]
 """Type alias for an adjacency list representing a weighted directed graph."""
 
 
@@ -40,7 +40,7 @@ class GraphConfig:
             raise ValueError("max_path_weight must be positive and finite")
 
 
-def _validate_graph(graph: Graph, start: Any, end: Any, config: GraphConfig) -> None:
+def _validate_graph(graph: Graph, start: Hashable, end: Hashable, config: GraphConfig) -> None:
     """Validate graph structure and ensure non-negative, finite edge weights.
 
     Parameters
@@ -64,26 +64,26 @@ def _validate_graph(graph: Graph, start: Any, end: Any, config: GraphConfig) -> 
     if start not in graph or end not in graph:
         raise ValueError("Start or end node not present in graph.")
 
-    for node, neighbours in graph.items():
+    for _node, neighbours in graph.items():
         if not isinstance(neighbours, dict):
             raise ValueError("Graph adjacency lists must be dictionaries.")
-        for neighbour, weight in neighbours.items():
+        for _neighbour, weight in neighbours.items():
             if weight < 0:
                 raise ValueError("Graph contains negative edge weights.")
             if not isfinite(weight) or weight > config.max_path_weight:
                 raise OverflowError("Edge weight exceeds safe maximum.")
 
 
-def _initialize_state(graph: Graph, start: Any) -> Tuple[Dict[Any, float], Dict[Any, Any]]:
+def _initialize_state(graph: Graph, start: Hashable) -> tuple[dict[Hashable, float], dict[Hashable, Hashable]]:
     """Initialise distance estimates and predecessor map."""
 
-    distances: Dict[Any, float] = {node: float("inf") for node in graph}
-    previous: Dict[Any, Any] = {}
+    distances: dict[Hashable, float] = {node: float("inf") for node in graph}
+    previous: dict[Hashable, Hashable] = {}
     distances[start] = 0.0
     return distances, previous
 
 
-def _topological_sort(graph: Graph) -> List[Any]:
+def _topological_sort(graph: Graph) -> list[Hashable]:
     """Return a topological ordering of ``graph`` or raise ``ValueError``.
 
     The function performs Kahn's algorithm while ensuring that all nodes are
@@ -91,14 +91,14 @@ def _topological_sort(graph: Graph) -> List[Any]:
     a cycle which would prevent such an ordering.
     """
 
-    indegree: Dict[Any, int] = {node: 0 for node in graph}
-    for node, neighbours in graph.items():
+    indegree: dict[Hashable, int] = {node: 0 for node in graph}
+    for _, neighbours in graph.items():
         for neighbour in neighbours:
             indegree.setdefault(neighbour, 0)
             indegree[neighbour] += 1
 
-    queue: deque[Any] = deque([n for n, d in indegree.items() if d == 0])
-    order: List[Any] = []
+    queue: deque[Hashable] = deque([n for n, d in indegree.items() if d == 0])
+    order: list[Hashable] = []
     while queue:
         node = queue.popleft()
         order.append(node)
@@ -113,7 +113,7 @@ def _topological_sort(graph: Graph) -> List[Any]:
     return order
 
 
-def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[Any]:
+def _reconstruct_path(previous: dict[Hashable, Hashable], start: Hashable, end: Hashable) -> list[Hashable]:
     """Rebuild the path from ``start`` to ``end`` using ``previous`` map.
 
     Prior to this change the function blindly followed the predecessor map.
@@ -124,7 +124,7 @@ def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[An
     encountered.
     """
 
-    path: List[Any] = [end]
+    path: list[Hashable] = [end]
     visited = set()
     while path[-1] != start:
         node = path[-1]
@@ -142,11 +142,11 @@ def _reconstruct_path(previous: Dict[Any, Any], start: Any, end: Any) -> List[An
 
 def find_optimal_path(
     graph: Graph,
-    start: Any,
-    end: Any,
+    start: Hashable,
+    end: Hashable,
     *,
     config: GraphConfig | None = None,
-) -> List[Any]:
+) -> list[Hashable]:
     """Find the shortest path from ``start`` to ``end`` in a DAG.
 
     The graph is represented as an adjacency list mapping each node to a

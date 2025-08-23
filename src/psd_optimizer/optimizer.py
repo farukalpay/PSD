@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import logging
-from typing import Callable, Iterable, Optional
+import math
+from collections.abc import Callable, Iterable
 
 import torch
 from torch import Tensor
@@ -10,7 +11,7 @@ from torch.optim.optimizer import Optimizer
 logger = logging.getLogger(__name__)
 
 
-class PSDOptimizer(Optimizer):  # type: ignore[misc]
+class PSDOptimizer(Optimizer):
     """Perturbed Saddle-point Descent (PSD) optimizer.
 
     This is a simple PyTorch implementation of the PSD algorithm described in
@@ -31,7 +32,7 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
         epsilon: float = 1e-3,
         r: float = 1e-3,
         T: int = 10,
-        max_grad_norm: Optional[float] = 1.0,
+        max_grad_norm: float | None = 1.0,
         **kwargs: object,
     ) -> None:
         if lr <= 0:
@@ -39,7 +40,7 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
         defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T, max_grad_norm=max_grad_norm)
         super().__init__(params, defaults, **kwargs)
 
-    def step(self, closure: Optional[Callable[[], Tensor]] = None) -> Tensor:
+    def step(self, closure: Callable[[], Tensor] | None = None) -> Tensor:  # type: ignore[override]
         """Perform a single optimization step.
 
         Parameters
@@ -71,7 +72,7 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
         prev_params = [p.detach().clone() for p in params]
 
         if any(not torch.isfinite(p.grad).all() for p in params):
-            for p, prev in zip(params, prev_params):
+            for p, prev in zip(params, prev_params, strict=False):
                 p.data.copy_(prev)
             group["lr"] *= 0.5
             logger.warning(
@@ -80,7 +81,8 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
             )
             return loss
 
-        grad_norm = torch.sqrt(sum(torch.sum(p.grad.detach() ** 2) for p in params))
+        grad_norm_sq = sum(float(torch.sum(p.grad.detach() ** 2)) for p in params)
+        grad_norm = math.sqrt(grad_norm_sq)
         eps = group["epsilon"]
         lr = group["lr"]
 
@@ -88,7 +90,7 @@ class PSDOptimizer(Optimizer):  # type: ignore[misc]
             with torch.no_grad():
                 for p in params:
                     p.add_(p.grad, alpha=-lr)
-            for p, prev in zip(params, prev_params):
+            for p, prev in zip(params, prev_params, strict=False):
                 if not torch.isfinite(p).all() or not torch.isfinite(p.grad).all():
                     p.data.copy_(prev)
                     group["lr"] *= 0.5
