@@ -77,15 +77,16 @@ def closure():
 opt.step(closure)
 ```
 
-Example scripts using this API are available in the `examples/`
+Example scripts using this API are available in the `notebooks/`
 directory.
 
 ## Documentation
 
-Further materials live in the `docs/` directory:
+Further materials are available:
 
-* `PSD_Quickstart_Colab.ipynb` – an interactive notebook showcasing the optimiser.
-* `section_1_5_extension.md` – theoretical notes on extending PSD to stochastic settings.
+* `notebooks/10_minute_start.ipynb` – an interactive notebook showcasing the optimiser.
+* `docs/section_1_5_extension.md` – theoretical notes on extending PSD to stochastic settings.
+* `notebooks/navigation.ipynb` – links to all example notebooks including `advanced_usage.ipynb`.
 
 ## Testing
 
