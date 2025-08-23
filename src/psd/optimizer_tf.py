@@ -9,12 +9,13 @@ escape saddle points.
 
 from __future__ import annotations
 
-from typing import Iterable, Optional, Tuple
+# mypy: ignore-errors
+from typing import Dict, Iterable, Optional, Tuple
 
 import tensorflow as tf
 
 
-class PSDTensorFlow(tf.keras.optimizers.Optimizer):
+class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
     """Perturbed Saddle-escape Descent optimizer for TensorFlow/Keras.
 
     Parameters
@@ -39,7 +40,7 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):
         t_thres: int = 50,
         r: float = 1e-2,
         name: str = "PSDTensorFlow",
-        **kwargs,
+        **kwargs: object,
     ) -> None:
         super().__init__(name, **kwargs)
         self._set_hyper("learning_rate", learning_rate)
@@ -54,23 +55,40 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):
             initializer=tf.constant_initializer(-t_thres - 1),
         )
 
-    def _resource_apply_dense(self, grad: tf.Tensor, var: tf.Variable, apply_state=None):
+    def _resource_apply_dense(
+        self,
+        grad: tf.Tensor,
+        var: tf.Variable,
+        apply_state: Optional[Dict[str, object]] = None,
+    ) -> None:
         lr_t = tf.cast(self._decayed_lr(var.dtype), var.dtype)
         var.assign_sub(grad * lr_t)
 
-    def _resource_apply_sparse(self, grad: tf.Tensor, var: tf.Variable, indices, apply_state=None):
+    def _resource_apply_sparse(
+        self,
+        grad: tf.Tensor,
+        var: tf.Variable,
+        indices: tf.Tensor,
+        apply_state: Optional[Dict[str, object]] = None,
+    ) -> None:
         lr_t = tf.cast(self._decayed_lr(var.dtype), var.dtype)
         var.scatter_sub(tf.IndexedSlices(grad * lr_t, indices))
 
-    def apply_gradients(self, grads_and_vars: Iterable[Tuple[tf.Tensor, tf.Variable]], name: Optional[str] = None, **kwargs):
+    def apply_gradients(
+        self,
+        grads_and_vars: Iterable[Tuple[tf.Tensor, tf.Variable]],
+        name: Optional[str] = None,
+        **kwargs: object,
+    ) -> None:
         grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
         if not grads_and_vars:
-            return super().apply_gradients(grads_and_vars, name, **kwargs)
+            super().apply_gradients(grads_and_vars, name, **kwargs)
+            return None
 
         grads, vars = zip(*grads_and_vars)
 
         # Compute global gradient norm across all tensors.
-        sq_norms = []
+        sq_norms: list[tf.Tensor] = []
         for g in grads:
             if isinstance(g, tf.IndexedSlices):
                 sq_norms.append(tf.reduce_sum(tf.square(g.values)))
@@ -97,10 +115,11 @@ class PSDTensorFlow(tf.keras.optimizers.Optimizer):
 
         tf.cond(need_perturb, perturb_vars, lambda: None)
 
-        return super().apply_gradients(grads_and_vars, name, **kwargs)
+        super().apply_gradients(grads_and_vars, name, **kwargs)
+        return None
 
-    def get_config(self) -> dict:
-        config = super().get_config()
+    def get_config(self) -> Dict[str, object]:
+        config: Dict[str, object] = super().get_config()
         config.update(
             {
                 "learning_rate": self._serialize_hyperparameter("learning_rate"),

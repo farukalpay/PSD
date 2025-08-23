@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "psd-optimizer"
 version = "0.1.0"
 description = "Perturbed Saddle-point Descent optimizer for PyTorch"
-authors = [{name = "PSD Authors"}]
-license = {text = "MIT"}
+authors = [{ name = "PSD Authors" }]
+license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
@@ -17,8 +17,46 @@ dependencies = [
     "matplotlib",
 ]
 
+[project.optional-dependencies]
+dev = [
+    "pre-commit==3.5.0",
+    "mypy==1.10.0",
+    "ruff==0.1.7",
+    "pytest==7.4.4",
+]
+docs = [
+    "sphinx==7.2.6",
+]
+bench = [
+    "pytest-benchmark==4.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/farukalpay/PSD"
 
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["psd", "psd_optimizer"]
+
+[tool.setuptools.package-data]
+psd = ["py.typed"]
+psd_optimizer = ["py.typed"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+exclude = ["tests/"]
+
+[[tool.mypy.overrides]]
+module = ["torch", "torch.*", "tensorflow", "tensorflow.*", "optuna", "matplotlib", "numpy"]
+ignore_missing_imports = true
+
+[tool.ruff]
+select = ["E", "F", "I"]
+src = ["src", "tests"]
+target-version = "py38"
+line-length = 120
+exclude = ["examples", "notebooks", "scripts", "experiments.py", "results", "data"]

@@ -6,6 +6,8 @@ an adaptive variant that combines Adam with perturbation-based saddle point
 escaping techniques.
 """
 
+from __future__ import annotations
+
 from .optimizer import PSDOptimizer
 from .perturbed_adam import PerturbedAdam
 

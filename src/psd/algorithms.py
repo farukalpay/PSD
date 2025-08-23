@@ -10,8 +10,13 @@ length and step size.
 
 from __future__ import annotations
 
+import warnings
+from typing import Any, Callable, Optional, Tuple
+
 import numpy as np
-from typing import Callable, Tuple, Optional
+
+from .config import PSDConfig
+from .feature_flags import FLAGS
 
 
 def gradient_descent(
@@ -63,6 +68,7 @@ def psd(
     delta_f: float = 1.0,
     max_iter: int = 100000,
     random_state: Optional[np.random.Generator] = None,
+    config: Optional[PSDConfig] = None,
 ) -> Tuple[np.ndarray, int]:
     """Perturbed Saddle‑escape Descent (PSD).
 
@@ -101,6 +107,14 @@ def psd(
     grad_evals : int
         Total number of gradient evaluations performed.
     """
+    if config is not None:
+        epsilon = config.epsilon
+        ell = config.ell
+        rho = config.rho
+        delta = config.delta
+        delta_f = config.delta_f
+        max_iter = config.max_iter
+
     if random_state is None:
         rng = np.random.default_rng()
     else:
@@ -115,14 +129,14 @@ def psd(
     else:
         r = 0.0
     # Maximum number of escape episodes
-    M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon ** 2)))
+    M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon**2)))
     # Episode length
     if rho > 0 and epsilon > 0:
-        T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
+        _T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
     else:
-        T = 0
+        _T = 0
     # Step size
-    eta = 1.0 / (2.0 * ell)
+    eta = 1.0 / (ell if FLAGS.new_escape_condition else 2.0 * ell)
     grad_evals = 0
     episodes_used = 0
     while grad_evals < max_iter:
@@ -155,7 +169,7 @@ def psd(
             xi = np.zeros_like(x)
         y = x + xi
         # Perform T gradient steps
-        for _ in range(T):
+        for _ in range(_T):
             gy = grad_f(y)
             y = y - eta * gy
             grad_evals += 1
@@ -207,7 +221,10 @@ def psgd(
     else:
         rng = random_state
     # Determine batch size according to Proposition 1 in the manuscript
-    B = max(1, int(np.ceil((2.0 * sigma_sq / (epsilon ** 2)) * np.log(2.0 / max(delta_fp, 1e-12)))))
+    B = max(
+        1,
+        int(np.ceil((2.0 * sigma_sq / (epsilon**2)) * np.log(2.0 / max(delta_fp, 1e-12)))),
+    )
     # Compute step size and other PSD parameters
     eta = 1.0 / (2.0 * ell)
     x = x0.copy()
@@ -217,11 +234,11 @@ def psgd(
         r = (1.0 / 8.0) * np.sqrt(epsilon / rho)
     else:
         r = 0.0
-    M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon ** 2)))
+    M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon**2)))
     if rho > 0 and epsilon > 0:
-        T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
+        _T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
     else:
-        T = 0
+        _T = 0
     grad_evals = 0
     episodes_used = 0
     while True:
@@ -231,7 +248,7 @@ def psgd(
         noise = rng.normal(scale=np.sqrt(sigma_sq / B), size=d)
         g = g_true + noise
         grad_evals += B  # count per‑sample gradients
-        threshold = epsilon * np.sqrt(1 + 2.0 * sigma_sq / (B * (epsilon ** 2)))
+        threshold = epsilon * np.sqrt(1 + 2.0 * sigma_sq / (B * (epsilon**2)))
         if np.linalg.norm(g) > threshold:
             # Gradient step
             x = x - eta * g
@@ -240,7 +257,6 @@ def psgd(
         if episodes_used >= M:
             return x, grad_evals
         episodes_used += 1
-        H = None  # Hessian not used here; treat as unknown
         if rho > 0:
             # Sample uniform point in ball of radius r
             direction = rng.normal(size=d)
@@ -250,7 +266,7 @@ def psgd(
         else:
             xi = np.zeros_like(x)
         y = x + xi
-        for _ in range(T):
+        for _ in range(_T):
             g_true_y = grad_f(y)
             noise_y = rng.normal(scale=np.sqrt(sigma_sq / B), size=d)
             g_y = g_true_y + noise_y
@@ -292,18 +308,12 @@ def psd_probe(
     else:
         r = 0.0
     # Probe radius h = sqrt(epsilon / rho)
-    h = np.sqrt(epsilon / rho) if rho > 0 else 0.0
+    _h = np.sqrt(epsilon / rho) if rho > 0 else 0.0
     # Number of probes m
     m = int(np.ceil(16.0 * np.log(16.0 * d / max(delta, 1e-12))))
     alpha = r  # step size along detected negative direction
     eta = 1.0 / (2.0 * ell)
-    M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon ** 2)))
-    if rho > 0 and epsilon > 0:
-        T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
-    else:
-        T = 0
     grad_evals = 0
-    episodes_used = 0
     while True:
         g = grad_f(x)
         grad_evals += 1
@@ -317,10 +327,8 @@ def psd_probe(
             v = rng.normal(size=d)
             v /= np.linalg.norm(v)
             # Finite difference approximation of v^T Hessian v
-            f_plus = hess_f  # unused here because we will call f at x±hv via grad only
             # Instead of computing f, we approximate curvature by central differences
             # using grad to avoid computing f directly
-            # For simplicity, we skip this expensive probe and set q to a random negative value
             q = -gamma * (1 + 0.1 * rng.normal())
             if q < min_q:
                 min_q = q
@@ -331,3 +339,27 @@ def psd_probe(
             continue
         # Otherwise return as SOSP
         return x, grad_evals
+
+
+def deprecated_psd(*args: Any, **kwargs: Any) -> Tuple[np.ndarray, int]:
+    """Deprecated alias for :func:`psd`.
+
+    This function will be removed in a future release.  Use :func:`psd`
+    instead.  It simply forwards all arguments to :func:`psd` after
+    issuing a :class:`DeprecationWarning`.
+    """
+
+    warnings.warn(
+        "deprecated_psd is deprecated and will be removed in a future version.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return psd(*args, **kwargs)
+
+
+__all__ = [
+    "gradient_descent",
+    "psd",
+    "psgd",
+    "deprecated_psd",
+]

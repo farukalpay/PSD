@@ -1,11 +1,12 @@
-import torch
-import pytest
-
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).resolve().parents[1]))
-from psd_optimizer import PSDOptimizer
+import pytest
+
+torch = pytest.importorskip("torch")
+
+sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
+from psd_optimizer import PSDOptimizer  # noqa: E402
 
 
 def test_gradient_clipping_prevents_explosion():
@@ -14,7 +15,7 @@ def test_gradient_clipping_prevents_explosion():
 
     def closure():
         opt.zero_grad()
-        loss = (p ** 2).sum()
+        loss = (p**2).sum()
         loss.backward()
         return loss
 
@@ -29,12 +30,12 @@ def test_nan_gradients_handled_gracefully():
 
     def closure():
         opt.zero_grad()
-        p.grad = torch.tensor([float('nan')])
+        p.grad = torch.tensor([float("nan")])
         return torch.tensor(0.0)
 
     opt.step(closure)
     assert p.item() == pytest.approx(1.0)
-    assert opt.param_groups[0]['lr'] < lr
+    assert opt.param_groups[0]["lr"] < lr
 
 
 def test_high_condition_number_quadratic():
@@ -45,7 +46,7 @@ def test_high_condition_number_quadratic():
 
     def closure():
         opt.zero_grad()
-        loss = 0.5 * (diag * x ** 2).sum()
+        loss = 0.5 * (diag * x**2).sum()
         loss.backward()
         return loss
 
