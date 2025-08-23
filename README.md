@@ -80,6 +80,25 @@ opt.step(closure)
 Example scripts using this API are available in the `notebooks/`
 directory.
 
+### Training a Small Language Model
+
+An illustrative example for fine-tuning a compact transformer with
+``PSDOptimizer`` is provided in ``scripts/train_small_language_model.py``.
+The script downloads a tiny GPT-style model from the Hugging Face Hub and
+optimizes it on a short dummy corpus.
+
+Run the example with default settings:
+
+```bash
+python scripts/train_small_language_model.py
+```
+
+Specify a different pretrained model and number of epochs:
+
+```bash
+python scripts/train_small_language_model.py --model distilgpt2 --epochs 5
+```
+
 ## Documentation
 
 Further materials are available:
