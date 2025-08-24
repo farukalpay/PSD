@@ -36,7 +36,7 @@ class PSDOptimizer(Optimizer):
         **kwargs: object,
     ) -> None:
         if lr <= 0:
-            raise ValueError("Invalid learning rate")
+            raise ValueError("Invalid learning rate. Set lr > 0, e.g., lr=1e-3.")
         defaults = dict(lr=lr, epsilon=epsilon, r=r, T=T, max_grad_norm=max_grad_norm)
         super().__init__(params, defaults, **kwargs)
 
@@ -56,7 +56,10 @@ class PSDOptimizer(Optimizer):
             The loss value evaluated by the provided ``closure``.
         """
         if closure is None:
-            raise RuntimeError("PSDOptimizer requires a closure to evaluate the model")
+            raise RuntimeError(
+                "PSDOptimizer requires a closure to evaluate the model. "
+                "Pass a callable to step, e.g., optimizer.step(lambda: loss_fn())."
+            )
 
         # Compute loss and gradients via the user-provided closure
         loss = closure()
