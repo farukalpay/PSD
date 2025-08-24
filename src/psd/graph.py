@@ -62,16 +62,24 @@ def _validate_graph(graph: Graph, start: Hashable, end: Hashable, config: GraphC
     """
 
     if start not in graph or end not in graph:
-        raise ValueError("Start or end node not present in graph.")
+        raise ValueError(
+            "Start or end node not present in graph. " "Example: {'A': {'B': 1.0}, 'B': {}} includes both 'A' and 'B'."
+        )
 
     for _node, neighbours in graph.items():
         if not isinstance(neighbours, dict):
-            raise ValueError("Graph adjacency lists must be dictionaries.")
+            raise ValueError(
+                "Graph adjacency lists must be dictionaries mapping neighbours to weights. "
+                f"Found {type(neighbours).__name__} for node {_node}."
+            )
         for _neighbour, weight in neighbours.items():
             if weight < 0:
-                raise ValueError("Graph contains negative edge weights.")
+                raise ValueError("Graph contains negative edge weights. Use non-negative weights like 0.5.")
             if not isfinite(weight) or weight > config.max_path_weight:
-                raise OverflowError("Edge weight exceeds safe maximum.")
+                raise OverflowError(
+                    f"Edge weight exceeds safe maximum of {config.max_path_weight}. "
+                    "Consider normalising weights or increasing max_path_weight."
+                )
 
 
 def _initialize_state(graph: Graph, start: Hashable) -> tuple[dict[Hashable, float], dict[Hashable, Hashable]]:
@@ -108,7 +116,9 @@ def _topological_sort(graph: Graph) -> list[Hashable]:
                 queue.append(neighbour)
 
     if len(order) != len(indegree):
-        raise ValueError("Graph must be a directed acyclic graph (DAG).")
+        raise ValueError(
+            "Graph must be a directed acyclic graph (DAG). " "For example, {'A': {'B': 1.0}, 'B': {}} is valid."
+        )
 
     return order
 
@@ -131,10 +141,10 @@ def _reconstruct_path(previous: dict[Hashable, Hashable], start: Hashable, end: 
         if node in visited:
             # Hitting the same node twice indicates a cycle in ``previous``.
             # Returning an explicit error prevents an infinite loop.
-            raise ValueError("Cycle detected while reconstructing path.")
+            raise ValueError("Cycle detected while reconstructing path. Ensure the graph is acyclic.")
         visited.add(node)
         if node not in previous:
-            raise ValueError("No path from start to end.")
+            raise ValueError("No path from start to end. Check that all intermediate nodes are connected.")
         path.append(previous[node])
     path.reverse()
     return path
@@ -195,13 +205,16 @@ def find_optimal_path(
             for neighbour, weight in graph.get(node, {}).items():
                 new_dist = current_dist + weight
                 if not isfinite(new_dist) or new_dist > cfg.max_path_weight:
-                    raise OverflowError("Path weight exceeds safe maximum.")
+                    raise OverflowError(
+                        f"Path weight exceeds safe maximum of {cfg.max_path_weight}. "
+                        "Reduce edge weights or raise max_path_weight."
+                    )
                 if new_dist < distances.get(neighbour, float("inf")):
                     distances[neighbour] = new_dist
                     previous[neighbour] = node
 
         if distances.get(end, float("inf")) == float("inf"):
-            raise ValueError(f"No path from {start!r} to {end!r}.")
+            raise ValueError(f"No path from {start!r} to {end!r}. Verify connectivity or adjust graph.")
 
         return _reconstruct_path(previous, start, end)
     finally:

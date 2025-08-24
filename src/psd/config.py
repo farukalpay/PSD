@@ -21,17 +21,19 @@ class PSDConfig:
 
     def __post_init__(self) -> None:  # pragma: no cover - simple validation
         if self.epsilon <= 0:
-            raise ValueError("epsilon must be positive")
+            raise ValueError(
+                f"epsilon must be positive (got {self.epsilon}). " "Example: PSDConfig(epsilon=1e-6, ell=1.0, rho=0.1)"
+            )
         if self.ell <= 0:
-            raise ValueError("ell must be positive")
+            raise ValueError(f"ell must be positive (got {self.ell}). Example: ell=1.0")
         if self.rho < 0:
-            raise ValueError("rho must be non-negative")
+            raise ValueError(f"rho must be non-negative (got {self.rho}). " "Use 0.0 for no regularisation.")
         if not 0 < self.delta < 1:
-            raise ValueError("delta must be in (0, 1)")
+            raise ValueError(f"delta must be in (0, 1), got {self.delta}. Typical choice is 0.1.")
         if self.delta_f <= 0:
-            raise ValueError("delta_f must be positive")
+            raise ValueError(f"delta_f must be positive (got {self.delta_f}). e.g., delta_f=1.0")
         if self.max_iter <= 0:
-            raise ValueError("max_iter must be positive")
+            raise ValueError(f"max_iter must be positive (got {self.max_iter}). Example: max_iter=100000.")
 
 
 __all__ = ["PSDConfig"]

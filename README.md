@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/farukalpay/PSD/actions/workflows/ci.yml/badge.svg)](https://github.com/farukalpay/PSD/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)](./)
+[![Docs](https://img.shields.io/badge/docs-latest-blue)](./docs/index.md)
+[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 
 ## Project Summary
 
@@ -50,6 +52,19 @@ git clone https://github.com/farukalpay/PSD.git
 cd PSD
 pip install -e ".[dev]"
 ```
+
+## Quick Start
+
+```python
+import numpy as np
+from psd import algorithms, functions
+
+x0 = np.array([1.0, -1.0])
+x_star, _ = algorithms.gradient_descent(x0, functions.SEPARABLE_QUARTIC.grad)
+```
+
+Further examples are available in the [`examples/`](./examples) directory and the
+[documentation](./docs/index.md).
 
 ## Usage
 
@@ -134,7 +149,9 @@ python scripts/train_small_language_model.py --model distilgpt2 --epochs 5
 
 ## Documentation
 
-Further materials are available:
+Full API documentation and guides are available in the
+[``docs/`` directory](./docs/index.md).
+Additional materials include:
 
 * `notebooks/10_minute_start.ipynb` – an interactive notebook showcasing the optimiser.
 * `docs/section_1_5_extension.md` – theoretical notes on extending PSD to stochastic settings.
