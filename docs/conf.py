@@ -20,6 +20,12 @@ extensions = [
     "sphinx_autodoc_typehints",
 ]
 
+# Enable Markdown features in MyST
+myst_enable_extensions = ["colon_fence"]
+
+# Avoid importing heavy dependencies during doc builds
+autodoc_mock_imports = ["numpy", "torch", "torchvision"]
+
 templates_path = ["_templates"]
 exclude_patterns: list[str] = []
 

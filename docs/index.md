@@ -6,7 +6,7 @@
 migration
 section_1_5_extension
 quickstart
-api
+api/index
 tutorials/mnist
 ```
 
