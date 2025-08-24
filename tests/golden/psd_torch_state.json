@@ -1,0 +1,25 @@
+{
+  "param_groups": [
+    {
+      "g_thres": 0.001,
+      "lr": 0.1,
+      "max_grad_norm": 1.0,
+      "params": [
+        0,
+        1
+      ],
+      "r": 0.001,
+      "t_thres": 10
+    }
+  ],
+  "state": {
+    "0": {
+      "t": 1,
+      "t_noise": -Infinity
+    },
+    "1": {
+      "t": 1,
+      "t_noise": -Infinity
+    }
+  }
+}
