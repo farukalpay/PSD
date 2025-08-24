@@ -8,6 +8,9 @@ section_1_5_extension
 quickstart
 api/index
 tutorials/mnist
+tutorials/gradient_descent
+tutorials/saddle_escape
+tutorials/pytorch_linear
 ```
 
 Welcome to the PSD documentation. The quick start guide shows how to use the
