@@ -44,7 +44,7 @@ def brute_force(graph: Graph, start: Hashable, end: Hashable) -> list[Hashable]:
     return best
 
 
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, derandomize=True)
 @given(dag_graphs())
 def test_find_optimal_path_matches_bruteforce(data: tuple[Graph, str, str]) -> None:
     graph, start, end = data

@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from .utils import retry
+
 
 @dataclass
 class LogStats:
@@ -14,13 +16,16 @@ class LogStats:
     latency_count: int
 
 
+@retry(OSError, tries=3, delay=0.01)
 def analyze_log(path: str | Path) -> LogStats:
     """Summarise errors and latency metrics in a structured log file.
 
     Parameters
     ----------
     path:
-        Path to a log file containing one JSON object per line.
+        Path to a log file containing one JSON object per line.  The function
+        tolerates transient ``OSError`` issues (for example when a log file is
+        being rotated) by retrying with a short exponential backoff.
     """
 
     p = Path(path)
