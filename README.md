@@ -87,9 +87,10 @@ Python loops and yielded the following improvements (dimension 1000):
 | Version | Mean time (ms) | Peak memory (MB) |
 |---------|----------------|-----------------|
 | Before  | 3.52           | 8.00            |
-| After   | 0.67           | 8.04            |
+| After   | 1.01           | 8.04            |
 
-Benchmarking is automated via `pytest-benchmark` with a ±5% budget gate.
+Benchmarking is automated via `pytest-benchmark` using a fixed NumPy seed.
+Hard time and memory thresholds guard against major regressions.
 
 ### Training with the PyTorch Optimiser
 
