@@ -119,9 +119,12 @@ def coupled_quartic(x: Array) -> float:
     float
         Function value.
     """
+    # compute separable quartic part
     quartic = np.sum(x**4 - x**2)
-    # upper triangular sum of x_i x_j for i < j
-    coupling = 0.1 * np.sum(np.triu(np.outer(x, x), 1))
+    # sum_{i<j} x_i x_j = ( (sum x)^2 - sum x^2 ) / 2
+    total = np.sum(x)
+    sum_sq = np.dot(x, x)
+    coupling = 0.05 * (total * total - sum_sq)
     return float(quartic + coupling)
 
 
@@ -141,10 +144,10 @@ def coupled_quartic_grad(x: Array) -> Array:
     np.ndarray
         Gradient vector of shape (d,).
     """
+    total = np.sum(x)
     grad = separable_quartic_grad(x)
-    # gradient of coupling term: 0.1 * sum_j x_j for each coordinate i
-    coupling_grad = 0.1 * (np.sum(x) - x)
-    return grad + coupling_grad
+    # gradient of coupling term: 0.1 * (sum_j x_j - x_i)
+    return grad + 0.1 * (total - x)
 
 
 def coupled_quartic_hess(x: Array) -> Array:
@@ -164,11 +167,10 @@ def coupled_quartic_hess(x: Array) -> Array:
         Hessian matrix of shape (d, d).
     """
     d = x.size
-    hess = separable_quartic_hess(x)
-    # add 0.1 to off‑diagonal entries
-    off_diag = 0.1 * np.ones((d, d))
-    np.fill_diagonal(off_diag, 0.0)
-    return hess + off_diag
+    diag = 12.0 * x**2 - 2.0
+    hess = np.full((d, d), 0.1)
+    np.fill_diagonal(hess, diag)
+    return hess
 
 
 ################################################################################
