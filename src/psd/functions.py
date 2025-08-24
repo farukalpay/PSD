@@ -240,11 +240,16 @@ def rosenbrock_hess(x: Array) -> Array:
     x = np.asarray(x)
     d = len(x)
     hess = np.zeros((d, d))
-    for i in range(d - 1):
-        hess[i, i] += 1200.0 * x[i] ** 2 - 400.0 * x[i + 1] + 2.0
-        hess[i, i + 1] += -400.0 * x[i]
-        hess[i + 1, i] += -400.0 * x[i]
-        hess[i + 1, i + 1] += 200.0
+    if d > 1:
+        idx = np.arange(d - 1)
+        diag = 1200.0 * x[idx] ** 2 - 400.0 * x[idx + 1] + 2.0
+        hess[idx, idx] = diag
+        hess[idx + 1, idx + 1] += 200.0
+        off = -400.0 * x[idx]
+        hess[idx, idx + 1] = off
+        hess[idx + 1, idx] = off
+    else:
+        hess[0, 0] = 200.0
     return hess
 
 
