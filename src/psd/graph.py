@@ -14,9 +14,13 @@ from collections import deque
 from collections.abc import Hashable
 from dataclasses import dataclass
 from math import isfinite
+from threading import Lock
 from time import perf_counter
 
+from .utils import critical_section, retry
+
 logger = logging.getLogger(__name__)
+_TOPO_LOCK = Lock()
 
 
 Graph = dict[Hashable, dict[Hashable, float]]
@@ -91,6 +95,7 @@ def _initialize_state(graph: Graph, start: Hashable) -> tuple[dict[Hashable, flo
     return distances, previous
 
 
+@retry(Exception, tries=3, delay=0.01)
 def _topological_sort(graph: Graph) -> list[Hashable]:
     """Return a topological ordering of ``graph`` or raise ``ValueError``.
 
@@ -99,28 +104,29 @@ def _topological_sort(graph: Graph) -> list[Hashable]:
     a cycle which would prevent such an ordering.
     """
 
-    indegree: dict[Hashable, int] = {node: 0 for node in graph}
-    for _, neighbours in graph.items():
-        for neighbour in neighbours:
-            indegree.setdefault(neighbour, 0)
-            indegree[neighbour] += 1
+    with critical_section(_TOPO_LOCK):
+        indegree: dict[Hashable, int] = {node: 0 for node in graph}
+        for _, neighbours in graph.items():
+            for neighbour in neighbours:
+                indegree.setdefault(neighbour, 0)
+                indegree[neighbour] += 1
 
-    queue: deque[Hashable] = deque([n for n, d in indegree.items() if d == 0])
-    order: list[Hashable] = []
-    while queue:
-        node = queue.popleft()
-        order.append(node)
-        for neighbour in graph.get(node, {}):
-            indegree[neighbour] -= 1
-            if indegree[neighbour] == 0:
-                queue.append(neighbour)
+        queue: deque[Hashable] = deque([n for n, d in indegree.items() if d == 0])
+        order: list[Hashable] = []
+        while queue:
+            node = queue.popleft()
+            order.append(node)
+            for neighbour in graph.get(node, {}):
+                indegree[neighbour] -= 1
+                if indegree[neighbour] == 0:
+                    queue.append(neighbour)
 
-    if len(order) != len(indegree):
-        raise ValueError(
-            "Graph must be a directed acyclic graph (DAG). " "For example, {'A': {'B': 1.0}, 'B': {}} is valid."
-        )
+        if len(order) != len(indegree):
+            raise ValueError(
+                "Graph must be a directed acyclic graph (DAG). " "For example, {'A': {'B': 1.0}, 'B': {}} is valid."
+            )
 
-    return order
+        return order
 
 
 def _reconstruct_path(previous: dict[Hashable, Hashable], start: Hashable, end: Hashable) -> list[Hashable]:
@@ -216,7 +222,9 @@ def find_optimal_path(
         if distances.get(end, float("inf")) == float("inf"):
             raise ValueError(f"No path from {start!r} to {end!r}. Verify connectivity or adjust graph.")
 
-        return _reconstruct_path(previous, start, end)
+        path = _reconstruct_path(previous, start, end)
+        assert path[0] == start and path[-1] == end, "Path endpoints mismatch"
+        return path
     finally:
         duration = perf_counter() - start_time
         logger.info("find_optimal_path executed in %.6f seconds", duration)

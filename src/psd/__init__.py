@@ -8,6 +8,9 @@ from . import algorithms, functions
 from .config import PSDConfig
 from .feature_flags import FLAGS, FeatureFlags, disable, enable
 from .graph import GraphConfig, find_optimal_path
+from .logging_utils import setup_logging
+
+setup_logging()
 
 try:  # Optional framework-specific optimisers
     from .framework_optimizers import PSDTensorFlow, PSDTorch
