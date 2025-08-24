@@ -9,7 +9,7 @@ from psd import algorithms
 from psd.config import PSDConfig
 
 
-@settings(max_examples=50, deadline=None)
+@settings(max_examples=50, deadline=None, derandomize=True)
 @given(
     st.lists(
         st.floats(min_value=-10, max_value=10, allow_nan=False, allow_infinity=False),

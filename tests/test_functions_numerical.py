@@ -41,7 +41,7 @@ def _finite_diff_hess(g: callable, x: np.ndarray, eps: float = 1e-6) -> np.ndarr
     return hess
 
 
-@settings(max_examples=25, deadline=None)
+@settings(max_examples=25, deadline=None, derandomize=True)
 @given(_vector_1d)
 @pytest.mark.fast
 def test_separable_quartic_grad_hess_match(x: np.ndarray) -> None:
@@ -54,7 +54,7 @@ def test_separable_quartic_grad_hess_match(x: np.ndarray) -> None:
     np.testing.assert_allclose(h(x), num_hess, rtol=1e-4, atol=1e-4)
 
 
-@settings(max_examples=20, deadline=None)
+@settings(max_examples=20, deadline=None, derandomize=True)
 @given(_vector_1d_ge2)
 @pytest.mark.slow
 def test_rosenbrock_grad_hess_match(x: np.ndarray) -> None:
@@ -67,7 +67,7 @@ def test_rosenbrock_grad_hess_match(x: np.ndarray) -> None:
     np.testing.assert_allclose(h(x), num_hess, rtol=1e-4, atol=1e-4)
 
 
-@settings(max_examples=20, deadline=None)
+@settings(max_examples=20, deadline=None, derandomize=True)
 @given(_vector_1d, st.integers(min_value=0, max_value=2**32 - 1))
 @pytest.mark.fast
 def test_random_quadratic_determinism_and_derivatives(x: np.ndarray, seed: int) -> None:
@@ -94,7 +94,7 @@ def test_random_quadratic_determinism_and_derivatives(x: np.ndarray, seed: int) 
     np.testing.assert_allclose(functions.random_quadratic_hess(A1), num_hess, rtol=1e-5, atol=1e-6)
 
 
-@settings(max_examples=5, deadline=None)
+@settings(max_examples=5, deadline=None, derandomize=True)
 @given(st.integers(min_value=0, max_value=2**32 - 1))
 @pytest.mark.slow
 def test_psd_deterministic_given_seed(seed: int) -> None:
