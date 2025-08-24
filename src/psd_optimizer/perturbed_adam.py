@@ -53,17 +53,17 @@ class PerturbedAdam(Optimizer):
         r: float = 1e-3,
     ) -> None:
         if lr <= 0:
-            raise ValueError(f"Invalid learning rate: {lr}")
+            raise ValueError(f"Invalid learning rate: {lr}. Set lr > 0, e.g., lr=1e-3.")
         if not 0.0 <= betas[0] < 1.0 or not 0.0 <= betas[1] < 1.0:
-            raise ValueError(f"Invalid beta parameters: {betas}")
+            raise ValueError(f"Invalid beta parameters: {betas}. Ensure 0 <= beta < 1, e.g., (0.9, 0.999).")
         if eps <= 0:
-            raise ValueError(f"Invalid epsilon value: {eps}")
+            raise ValueError(f"Invalid epsilon value: {eps}. Use a positive value like 1e-8.")
         if g_thres <= 0:
-            raise ValueError("g_thres must be positive")
+            raise ValueError("g_thres must be positive. Use g_thres > 0, e.g., 1e-3.")
         if t_thres <= 0:
-            raise ValueError("t_thres must be positive")
+            raise ValueError("t_thres must be positive. Use t_thres > 0, e.g., 10.")
         if r < 0:
-            raise ValueError("r must be non-negative")
+            raise ValueError("r must be non-negative. Set r >= 0.")
 
         defaults = dict(
             lr=lr,

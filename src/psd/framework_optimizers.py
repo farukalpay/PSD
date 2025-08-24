@@ -102,13 +102,13 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
         **kwargs: object,
     ) -> None:
         if torch is None:  # pragma: no cover - ensures clear error if torch missing
-            raise ImportError("PyTorch is required to use PSDTorch")
+            raise ImportError("PyTorch is required to use PSDTorch. Install torch to enable this optimizer.")
         if lr <= 0:
-            raise ValueError("Invalid learning rate")
+            raise ValueError("Invalid learning rate. Set lr > 0, e.g., lr=1e-3.")
         if g_thres < 0 or r < 0:
-            raise ValueError("g_thres and r must be non-negative")
+            raise ValueError("g_thres and r must be non-negative. Use values >= 0.")
         if t_thres < 0:
-            raise ValueError("t_thres must be non-negative")
+            raise ValueError("t_thres must be non-negative. Use t_thres >= 0, e.g., 10.")
 
         defaults = dict(lr=lr, g_thres=g_thres, t_thres=t_thres, r=r, max_grad_norm=max_grad_norm)
         super().__init__(params, defaults, **kwargs)
@@ -289,7 +289,9 @@ else:
         """Placeholder raising :class:`ImportError` when TensorFlow is unavailable."""
 
         def __init__(self, *args: object, **kwargs: object) -> None:  # noqa: D401
-            raise ImportError("TensorFlow is required to use PSDTensorFlow")
+            raise ImportError(
+                "TensorFlow is required to use PSDTensorFlow. Install tensorflow to enable this optimizer."
+            )
 
 
 __all__ = ["PSDTorch", "PSDTensorFlow"]

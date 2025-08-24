@@ -31,14 +31,16 @@ FLAGS = FeatureFlags.from_env()
 def enable(flag: str) -> None:
     """Enable a feature flag by name."""
     if not hasattr(FLAGS, flag):  # pragma: no cover - validation
-        raise AttributeError(f"Unknown feature flag: {flag}")
+        valid = ", ".join(f for f in vars(FLAGS) if not f.startswith("_"))
+        raise AttributeError(f"Unknown feature flag: {flag}. Choose from: {valid}.")
     setattr(FLAGS, flag, True)
 
 
 def disable(flag: str) -> None:
     """Disable a feature flag by name."""
     if not hasattr(FLAGS, flag):  # pragma: no cover - validation
-        raise AttributeError(f"Unknown feature flag: {flag}")
+        valid = ", ".join(f for f in vars(FLAGS) if not f.startswith("_"))
+        raise AttributeError(f"Unknown feature flag: {flag}. Choose from: {valid}.")
     setattr(FLAGS, flag, False)
 
 
