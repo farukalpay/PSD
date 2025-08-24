@@ -227,7 +227,11 @@ def find_optimal_path(
         return path
     finally:
         duration = perf_counter() - start_time
-        logger.info("find_optimal_path executed in %.6f seconds", duration)
+        logger.info(
+            "find_optimal_path executed in %.6f seconds",
+            duration,
+            extra={"duration": duration},
+        )
 
 
 __all__ = ["find_optimal_path", "GraphConfig"]

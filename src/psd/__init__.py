@@ -8,6 +8,7 @@ from . import algorithms, functions
 from .config import PSDConfig
 from .feature_flags import FLAGS, FeatureFlags, disable, enable
 from .graph import GraphConfig, find_optimal_path
+from .log_analyzer import LogStats, analyze_log, summarize_logs
 from .logging_utils import setup_logging
 
 setup_logging()
@@ -35,5 +36,8 @@ __all__ = [
     "disable",
     "PSDTorch",
     "PSDTensorFlow",
+    "LogStats",
+    "analyze_log",
+    "summarize_logs",
     "__version__",
 ]
