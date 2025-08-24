@@ -189,100 +189,107 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
         return loss
 
 
-class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
-    """Perturbed Saddle-point Descent optimizer for TensorFlow.
+if tf is not None:  # pragma: no cover - only defined when TensorFlow is available
 
-    This class follows the Keras optimizer API and supports serialization
-    through :meth:`get_config`.
+    class PSDTensorFlow(tf.keras.optimizers.Optimizer):  # type: ignore[misc]
+        """Perturbed Saddle-point Descent optimizer for TensorFlow.
 
-    Parameters
-    ----------
-    learning_rate:
-        Step size used for the gradient descent update.
-    g_thres:
-        Gradient-norm threshold that triggers a perturbation episode.
-    t_thres:
-        Minimum number of steps between two perturbation episodes.
-    r:
-        Standard deviation of the isotropic Gaussian noise used for
-        perturbations.
-    name:
-        Optional name for the optimizer.
-    """
+        This class follows the Keras optimizer API and supports serialization
+        through :meth:`get_config`.
 
-    def __init__(
-        self,
-        learning_rate: float = 1e-3,
-        g_thres: float = 1e-3,
-        t_thres: int = 10,
-        r: float = 1e-3,
-        name: str = "PSDTensorFlow",
-        **kwargs: object,
-    ) -> None:
-        if tf is None:  # pragma: no cover - ensures clear error if TF missing
+        Parameters
+        ----------
+        learning_rate:
+            Step size used for the gradient descent update.
+        g_thres:
+            Gradient-norm threshold that triggers a perturbation episode.
+        t_thres:
+            Minimum number of steps between two perturbation episodes.
+        r:
+            Standard deviation of the isotropic Gaussian noise used for
+            perturbations.
+        name:
+            Optional name for the optimizer.
+        """
+
+        def __init__(
+            self,
+            learning_rate: float = 1e-3,
+            g_thres: float = 1e-3,
+            t_thres: int = 10,
+            r: float = 1e-3,
+            name: str = "PSDTensorFlow",
+            **kwargs: object,
+        ) -> None:
+            super().__init__(name, **kwargs)
+            self._set_hyper("learning_rate", learning_rate)
+            self._set_hyper("g_thres", g_thres)
+            self._set_hyper("t_thres", float(t_thres))
+            self._set_hyper("r", r)
+
+        def _create_slots(self, var_list: list[tf.Variable]) -> None:  # pragma: no cover - TF specific
+            for var in var_list:
+                # ``t_noise`` stores the iteration of the last perturbation.  It is
+                # initialised to a very negative value so that a perturbation is
+                # immediately allowed if the gradient norm condition is met.
+                self.add_slot(var, "t_noise", initializer=tf.constant_initializer(-1.0e9))
+
+        @tf.function
+        def apply_gradients(
+            self,
+            grads_and_vars: Iterable[tuple[tf.Tensor, tf.Variable]],
+            name: str | None = None,
+            **kwargs: object,
+        ) -> None:  # pragma: no cover - TF specific
+            grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
+            if not grads_and_vars:
+                return None
+
+            grads, vars = zip(*grads_and_vars)  # noqa: B905
+            global_norm = tf.linalg.global_norm(grads)
+
+            # Cached tensor versions of hyper-parameters for efficiency.
+            g_thres = self._get_hyper("g_thres")
+            t_thres = self._get_hyper("t_thres")
+            r = self._get_hyper("r")
+
+            for grad, var in grads_and_vars:
+                var_dtype = var.dtype.base_dtype
+                lr_t = tf.cast(self._decayed_lr(var_dtype), var_dtype)
+                g_thres_t = tf.cast(g_thres, var_dtype)
+                t_thres_t = tf.cast(t_thres, var_dtype)
+                r_t = tf.cast(r, var_dtype)
+                t = tf.cast(self.iterations, var_dtype)
+
+                t_noise = self.get_slot(var, "t_noise")
+                should_perturb = tf.logical_and(global_norm <= g_thres_t, (t - t_noise) > t_thres_t)
+
+                noise = tf.random.normal(tf.shape(var), stddev=r_t, dtype=var_dtype)
+                perturb = tf.where(should_perturb, noise, tf.zeros_like(var))
+                var.assign_add(perturb)
+                t_noise.assign(tf.where(should_perturb, t, t_noise))
+                var.assign_sub(lr_t * grad)
+
+            self.iterations.assign_add(1)
+
+        def get_config(self) -> dict[str, object]:  # pragma: no cover - TF specific
+            config: dict[str, object] = super().get_config()
+            config.update(
+                {
+                    "learning_rate": self._serialize_hyperparameter("learning_rate"),
+                    "g_thres": self._serialize_hyperparameter("g_thres"),
+                    "t_thres": self._serialize_hyperparameter("t_thres"),
+                    "r": self._serialize_hyperparameter("r"),
+                }
+            )
+            return config
+else:
+
+    class PSDTensorFlow:  # pragma: no cover - placeholder when TensorFlow is missing
+        """Placeholder raising :class:`ImportError` when TensorFlow is unavailable."""
+
+        def __init__(self, *args: object, **kwargs: object) -> None:  # noqa: D401
             raise ImportError("TensorFlow is required to use PSDTensorFlow")
-        super().__init__(name, **kwargs)
-        self._set_hyper("learning_rate", learning_rate)
-        self._set_hyper("g_thres", g_thres)
-        self._set_hyper("t_thres", float(t_thres))
-        self._set_hyper("r", r)
-
-    def _create_slots(self, var_list: list[tf.Variable]) -> None:  # pragma: no cover - TF specific
-        for var in var_list:
-            # ``t_noise`` stores the iteration of the last perturbation.  It is
-            # initialised to a very negative value so that a perturbation is
-            # immediately allowed if the gradient norm condition is met.
-            self.add_slot(var, "t_noise", initializer=tf.constant_initializer(-1.0e9))
-
-    @tf.function
-    def apply_gradients(
-        self,
-        grads_and_vars: Iterable[tuple[tf.Tensor, tf.Variable]],
-        name: str | None = None,
-        **kwargs: object,
-    ) -> None:  # pragma: no cover - TF specific
-        grads_and_vars = [(g, v) for g, v in grads_and_vars if g is not None]
-        if not grads_and_vars:
-            return None
-
-        grads, vars = zip(*grads_and_vars)  # noqa: B905
-        global_norm = tf.linalg.global_norm(grads)
-
-        # Cached tensor versions of hyper-parameters for efficiency.
-        g_thres = self._get_hyper("g_thres")
-        t_thres = self._get_hyper("t_thres")
-        r = self._get_hyper("r")
-
-        for grad, var in grads_and_vars:
-            var_dtype = var.dtype.base_dtype
-            lr_t = tf.cast(self._decayed_lr(var_dtype), var_dtype)
-            g_thres_t = tf.cast(g_thres, var_dtype)
-            t_thres_t = tf.cast(t_thres, var_dtype)
-            r_t = tf.cast(r, var_dtype)
-            t = tf.cast(self.iterations, var_dtype)
-
-            t_noise = self.get_slot(var, "t_noise")
-            should_perturb = tf.logical_and(global_norm <= g_thres_t, (t - t_noise) > t_thres_t)
-
-            noise = tf.random.normal(tf.shape(var), stddev=r_t, dtype=var_dtype)
-            perturb = tf.where(should_perturb, noise, tf.zeros_like(var))
-            var.assign_add(perturb)
-            t_noise.assign(tf.where(should_perturb, t, t_noise))
-            var.assign_sub(lr_t * grad)
-
-        self.iterations.assign_add(1)
-
-    def get_config(self) -> dict[str, object]:  # pragma: no cover - TF specific
-        config: dict[str, object] = super().get_config()
-        config.update(
-            {
-                "learning_rate": self._serialize_hyperparameter("learning_rate"),
-                "g_thres": self._serialize_hyperparameter("g_thres"),
-                "t_thres": self._serialize_hyperparameter("t_thres"),
-                "r": self._serialize_hyperparameter("r"),
-            }
-        )
-        return config
 
 
 __all__ = ["PSDTorch", "PSDTensorFlow"]

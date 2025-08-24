@@ -71,7 +71,7 @@ def psd(
     random_state: np.random.Generator | None = None,
     config: PSDConfig | None = None,
 ) -> tuple[np.ndarray, int]:
-    """Perturbed Saddle‑escape Descent (PSD).
+    r"""Perturbed Saddle‑escape Descent (PSD).
 
     This implementation follows the algorithm described in the manuscript
     and uses explicit constants.  It is designed for pedagogical use and

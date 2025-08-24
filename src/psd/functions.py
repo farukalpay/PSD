@@ -11,11 +11,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import TypeAlias
 
 import numpy as np
 from numpy.typing import NDArray
 
-Array = NDArray[np.float64]
+Array: TypeAlias = NDArray[np.float64]
 
 
 @dataclass(frozen=True)
@@ -33,7 +34,7 @@ class TestFunction:
 
 
 def separable_quartic(x: Array) -> float:
-    """Compute the value of the separable quartic function.
+    r"""Compute the value of the separable quartic function.
 
     The separable quartic is defined as
 
@@ -58,7 +59,7 @@ def separable_quartic(x: Array) -> float:
 
 
 def separable_quartic_grad(x: Array) -> Array:
-    """Gradient of the separable quartic function.
+    r"""Gradient of the separable quartic function.
 
     Gradient is given by :math:`\grad f(x) = 4 x^3 - 2 x`.
 
@@ -100,7 +101,7 @@ def separable_quartic_hess(x: Array) -> Array:
 
 
 def coupled_quartic(x: Array) -> float:
-    """Compute the value of the coupled quartic function.
+    r"""Compute the value of the coupled quartic function.
 
     This function couples the separable quartic with a weak quadratic term:
 
@@ -176,7 +177,7 @@ def coupled_quartic_hess(x: Array) -> Array:
 
 
 def rosenbrock(x: Array) -> float:
-    """Compute the Rosenbrock function in d dimensions.
+    r"""Compute the Rosenbrock function in d dimensions.
 
     The standard Rosenbrock function in d dimensions is defined as
 
@@ -253,7 +254,7 @@ def rosenbrock_hess(x: Array) -> Array:
 
 
 def random_quadratic(d: int, seed: int | None = None) -> tuple[Array, Array]:
-    """Generate a random quadratic function with controlled spectrum.
+    r"""Generate a random quadratic function with controlled spectrum.
 
     The function has the form
 
