@@ -149,12 +149,12 @@ class PSDTorch(torch.optim.Optimizer):  # type: ignore[misc]
                     state["t_noise"] = -math.inf
                 states.append(state)
 
-            # Efficient global gradient norm: sum of squared norms.
-            grad_norm_sq = 0.0
-            for p in params:
-                grad = p.grad.detach()
-                grad_norm_sq += float(torch.sum(grad * grad))
-            grad_norm = math.sqrt(grad_norm_sq)
+            # Efficient global gradient norm using vector operations.
+            if params:
+                grads_flat = torch.cat([p.grad.detach().reshape(-1) for p in params])
+                grad_norm = torch.linalg.vector_norm(grads_flat).item()
+            else:
+                grad_norm = 0.0
 
             g_thres = group["g_thres"]
             t_thres = group["t_thres"]
