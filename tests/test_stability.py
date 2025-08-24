@@ -4,6 +4,8 @@ torch = pytest.importorskip("torch")
 
 from psd_optimizer import PSDOptimizer  # noqa: E402
 
+torch.manual_seed(0)
+
 
 def test_gradient_clipping_prevents_explosion() -> None:
     p = torch.nn.Parameter(torch.tensor([10.0]))
