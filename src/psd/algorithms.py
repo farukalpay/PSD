@@ -122,21 +122,43 @@ def psd(
         rng = random_state
     x = x0.copy()
     d = x.size
+    # ------------------------------------------------------------------
     # Derived parameters
+    # ------------------------------------------------------------------
+    # ``gamma`` sets the curvature threshold that distinguishes a true
+    # saddle point from numerical noise.  It arises from the
+    # Hessian‑Lipschitz constant ``rho`` and the gradient tolerance
+    # ``epsilon`` via ``gamma = sqrt(rho * epsilon)``.
     gamma = np.sqrt(rho * epsilon)
-    # Perturbation radius r = gamma/(8*rho)
+
+    # The perturbation radius ``r`` is *curvature‑calibrated* – the scale
+    # ensures we only move far enough to escape regions of significant
+    # negative curvature while remaining inside the neighbourhood where the
+    # Taylor expansion controlled by ``rho`` is valid.
+    # r = gamma / (8 * rho) = sqrt(epsilon / rho) / 8
     if rho > 0:
         r = (1.0 / 8.0) * np.sqrt(epsilon / rho)
     else:
+        # When ``rho`` vanishes the Hessian is constant and no perturbation
+        # is required.
         r = 0.0
-    # Maximum number of escape episodes
+
+    # ``M`` bounds the number of allowed escape episodes.  The constant is
+    # obtained by applying a union bound over episodes so that the overall
+    # failure probability stays below ``delta``.
     M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon**2)))
-    # Episode length
+
+    # Episode length ``_T`` is the number of gradient steps performed
+    # during an escape attempt.  The logarithmic term again results from a
+    # union bound over dimensions and episodes.
     if rho > 0 and epsilon > 0:
         _T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
     else:
         _T = 0
-    # Step size
+
+    # ``eta`` is the gradient descent step size.  A feature flag allows a
+    # slightly more aggressive choice that is still theoretically
+    # justified.
     eta = 1.0 / (ell if FLAGS.new_escape_condition else 2.0 * ell)
     grad_evals = 0
     episodes_used = 0
