@@ -84,6 +84,26 @@ x_star, _ = algorithms.gradient_descent(x0, functions.SEPARABLE_QUARTIC.grad)
 This structure allows you to experiment with the reference NumPy
 implementations directly in your projects.
 
+The PyTorch optimisers ``PSDOptimizer`` and ``PerturbedAdam`` are also
+available directly via ``from psd import ...``.
+
+### All-in-One "Monster" Interface
+
+For rapid experimentation without navigating submodules, import the aggregated
+``psd.monster`` module.  It re-exports the core algorithms, analytic test
+functions and framework-specific optimisers in a single namespace:
+
+```python
+import numpy as np
+from psd import monster
+
+x0 = np.array([1.0, -1.0])
+x_star, _ = monster.gradient_descent(x0, monster.SEPARABLE_QUARTIC.grad)
+```
+
+This unified view aims to be approachable for both humans and language models
+exploring the project.
+
 ### Generating Synthetic Data
 
 ```bash

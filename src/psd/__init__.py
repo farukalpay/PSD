@@ -19,6 +19,12 @@ except Exception:  # pragma: no cover - dependencies may be missing
     PSDTorch = None  # type: ignore
     PSDTensorFlow = None  # type: ignore
 
+try:  # Optional PyTorch optimizers
+    from psd_optimizer import PerturbedAdam, PSDOptimizer
+except Exception:  # pragma: no cover - dependencies may be missing
+    PSDOptimizer = None  # type: ignore
+    PerturbedAdam = None  # type: ignore
+
 try:
     __version__ = version("psd-optimizer")
 except PackageNotFoundError:  # pragma: no cover
@@ -36,6 +42,8 @@ __all__ = [
     "disable",
     "PSDTorch",
     "PSDTensorFlow",
+    "PSDOptimizer",
+    "PerturbedAdam",
     "LogStats",
     "analyze_log",
     "summarize_logs",
