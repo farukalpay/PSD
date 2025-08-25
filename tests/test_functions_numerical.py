@@ -67,6 +67,51 @@ def test_rosenbrock_grad_hess_match(x: np.ndarray) -> None:
     np.testing.assert_allclose(h(x), num_hess, rtol=1e-4, atol=1e-4)
 
 
+def test_rosenbrock_hess_edge_case() -> None:
+    """The Rosenbrock Hessian should handle one‑dimensional inputs."""
+    x = np.array([1.23])
+    h = functions.rosenbrock_hess(x)
+    assert h.shape == (1, 1)
+    assert np.isclose(h[0, 0], 200.0)
+
+
+def test_rosenbrock_hess_large_dim_is_finite() -> None:
+    """Evaluate numerical stability on a large random vector."""
+    rng = np.random.default_rng(0)
+    x = rng.standard_normal(200)
+    h = functions.rosenbrock_hess(x)
+    assert np.all(np.isfinite(h))
+
+
+def test_rosenbrock_hess_cython_matches_python() -> None:
+    """Cython and NumPy implementations should agree."""
+    try:
+        from psd._rosenbrock import rosenbrock_hess_fast
+    except Exception:  # pragma: no cover - extension not built
+        pytest.skip("Cython extension not available")
+
+    rng = np.random.default_rng(1)
+    x = rng.standard_normal(10)
+    h_fast = rosenbrock_hess_fast(x)
+
+    # Re‑implement the Python version locally for comparison.  This keeps
+    # the test independent of whether ``functions.rosenbrock_hess``
+    # dispatches to the Cython version.
+    d = len(x)
+    h_py = np.zeros((d, d))
+    if d > 1:
+        idx = np.arange(d - 1)
+        diag = 1200.0 * x[idx] ** 2 - 400.0 * x[idx + 1] + 2.0
+        h_py[idx, idx] = diag
+        h_py[idx + 1, idx + 1] += 200.0
+        off = -400.0 * x[idx]
+        h_py[idx, idx + 1] = off
+        h_py[idx + 1, idx] = off
+    else:
+        h_py[0, 0] = 200.0
+    np.testing.assert_allclose(h_fast, h_py, rtol=1e-12, atol=1e-12)
+
+
 @settings(max_examples=20, deadline=None, derandomize=True)
 @given(_vector_1d, st.integers(min_value=0, max_value=2**32 - 1))
 @pytest.mark.fast
