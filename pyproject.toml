@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=61", "Cython>=0.29.36"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -48,6 +48,9 @@ include = ["psd*", "psd_optimizer*"]
 [tool.setuptools.package-data]
 psd = ["py.typed"]
 psd_optimizer = ["py.typed"]
+
+[tool.setuptools.ext_modules]
+"psd._fast_ops" = {sources = ["src/psd/_fast_ops.pyx"]}
 
 [tool.mypy]
 python_version = "3.11"

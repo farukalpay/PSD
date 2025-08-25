@@ -95,3 +95,34 @@ def test_deprecated_psd_warns() -> None:
     cfg = PSDConfig(epsilon=1e-6, ell=1.0, rho=1.0, max_iter=10)
     with pytest.warns(DeprecationWarning):
         algorithms.deprecated_psd(x0, grad, hess, 1e-6, 1.0, 1.0, config=cfg)
+
+
+def test_psd_handles_zero_hessian_lipschitz() -> None:
+    """Algorithm should not divide by zero when ``rho`` is zero."""
+
+    def grad(x: np.ndarray) -> np.ndarray:
+        return x
+
+    def hess(x: np.ndarray) -> np.ndarray:
+        return np.eye(len(x))
+
+    x0 = np.array([0.5, -0.5])
+    cfg = PSDConfig(epsilon=1e-4, ell=1.0, rho=0.0, max_iter=1000)
+    x, _ = algorithms.psd(x0, grad, hess, 1e-4, 1.0, 0.0, config=cfg)
+    assert np.allclose(x, np.zeros_like(x0), atol=1e-4)
+
+
+def test_psd_returns_immediately_with_small_gradient() -> None:
+    """If the initial gradient is tiny, PSD should return without steps."""
+
+    def grad(x: np.ndarray) -> np.ndarray:
+        return np.zeros_like(x)
+
+    def hess(x: np.ndarray) -> np.ndarray:
+        return np.eye(len(x))
+
+    x0 = np.array([1.0])
+    cfg = PSDConfig(epsilon=0.1, ell=1.0, rho=1.0, max_iter=10)
+    x, evals = algorithms.psd(x0, grad, hess, 0.1, 1.0, 1.0, config=cfg)
+    assert evals == 1
+    assert np.allclose(x, x0)
