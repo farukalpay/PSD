@@ -18,6 +18,7 @@ import numpy as np
 
 from .config import PSDConfig
 from .feature_flags import FLAGS
+from .fast_ops import axpy
 
 
 def gradient_descent(
@@ -54,7 +55,8 @@ def gradient_descent(
         g = grad_f(x)
         if np.linalg.norm(g) <= tol:
             return x, i
-        x = x - step_size * g
+        # Use optional Cython axpy for the in-place update ``x -= step_size * g``
+        axpy(x, g, step_size)
     return x, max_iter
 
 
@@ -122,21 +124,33 @@ def psd(
         rng = random_state
     x = x0.copy()
     d = x.size
-    # Derived parameters
+    # Derived parameters grounded in the theoretical analysis.
+    # ``gamma`` is the curvature threshold :math:`\sqrt{\rho\,\epsilon}` appearing in
+    # the Hessian-Lipschitz assumption.  Negative eigenvalues below ``-gamma``
+    # indicate directions of sufficiently negative curvature to warrant an escape
+    # episode.
     gamma = np.sqrt(rho * epsilon)
-    # Perturbation radius r = gamma/(8*rho)
+    # The perturbation radius is ``r = gamma/(8 rho)``.  When ``rho`` is zero the
+    # problem is effectively first-order and no perturbation is needed.
     if rho > 0:
         r = (1.0 / 8.0) * np.sqrt(epsilon / rho)
     else:
         r = 0.0
-    # Maximum number of escape episodes
+    # Maximum number of escape episodes derived from the curvature-calibrated
+    # analysis.  Exceeding this bound violates the overall failure probability.
     M = int(1 + np.ceil(128.0 * ell * delta_f / (epsilon**2)))
-    # Episode length
+    # Each episode performs ``_T`` gradient steps.  The expression below mirrors
+    # the theoretical upper bound and depends logarithmically on the dimension
+    # and allowed failure probability ``delta``.
     if rho > 0 and epsilon > 0:
-        _T = int(np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12))))
+        _T = int(
+            np.ceil(8.0 * ell / gamma * np.log((16.0 * d * M) / max(delta, 1e-12)))
+        )
     else:
         _T = 0
-    # Step size
+    # Gradient descent step size.  We optionally use ``1/ell`` (the classical
+    # choice under an exact escape condition) or ``1/(2 ell)`` for the legacy
+    # variant controlled by a feature flag.
     eta = 1.0 / (ell if FLAGS.new_escape_condition else 2.0 * ell)
     grad_evals = 0
     episodes_used = 0
@@ -145,7 +159,7 @@ def psd(
         grad_evals += 1
         if np.linalg.norm(g) > epsilon:
             # Gradient descent step
-            x = x - eta * g
+            axpy(x, g, eta)
             continue
         # Check curvature
         H = hess_f(x)
@@ -172,7 +186,7 @@ def psd(
         # Perform T gradient steps
         for _ in range(_T):
             gy = grad_f(y)
-            y = y - eta * gy
+            axpy(y, gy, eta)
             grad_evals += 1
             if grad_evals >= max_iter:
                 break
@@ -252,7 +266,7 @@ def psgd(
         threshold = epsilon * np.sqrt(1 + 2.0 * sigma_sq / (B * (epsilon**2)))
         if np.linalg.norm(g) > threshold:
             # Gradient step
-            x = x - eta * g
+            axpy(x, g, eta)
             continue
         # Enter escape episode
         if episodes_used >= M:
@@ -271,7 +285,7 @@ def psgd(
             g_true_y = grad_f(y)
             noise_y = rng.normal(scale=np.sqrt(sigma_sq / B), size=d)
             g_y = g_true_y + noise_y
-            y = y - eta * g_y
+            axpy(y, g_y, eta)
             grad_evals += B
         x = y
 
@@ -319,7 +333,7 @@ def psd_probe(
         g = grad_f(x)
         grad_evals += 1
         if np.linalg.norm(g) > epsilon:
-            x = x - eta * g
+            axpy(x, g, eta)
             continue
         # Probe for negative curvature
         min_q = np.inf
