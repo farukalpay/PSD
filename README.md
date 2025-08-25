@@ -8,7 +8,7 @@
 ## Project Summary
 
 This repository implements the **Perturbed Saddle-escape Descent (PSD)**
-algorithm for escaping saddle points in non-convex optimisation problems.
+algorithm for escaping saddle points in non-convex optimisation problems, as described in [Alpay and Alakkad (2025)](https://arxiv.org/abs/2508.16540).
 It contains reference NumPy implementations, framework specific optimisers
 for PyTorch and TensorFlow, and utilities for reproducing the synthetic
 experiments reported in the accompanying manuscript.
@@ -183,6 +183,22 @@ experiments.py    # Synthetic data generation
 Contributions are welcome!  Please open an issue or pull request on GitHub
 and see `CONTRIBUTING.md` for guidelines.  By participating you agree to
 abide by the `CODE_OF_CONDUCT.md`.
+
+## Citation
+
+If you use PSD in your research, please cite the following:
+
+```bibtex
+@misc{alpay2025escapingsaddlepointscurvaturecalibrated,
+      title={Escaping Saddle Points via Curvature-Calibrated Perturbations: A Complete Analysis with Explicit Constants and Empirical Validation},
+      author={Faruk Alpay and Hamdi Alakkad},
+      year={2025},
+      eprint={2508.16540},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2508.16540},
+}
+```
 
 ## License
 
