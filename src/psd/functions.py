@@ -16,6 +16,14 @@ from typing import TypeAlias
 import numpy as np
 from numpy.typing import NDArray
 
+# Optional Cython acceleration for the Rosenbrock Hessian.  Importing is
+# wrapped in a ``try`` so that the pure Python fall-back is used when the
+# extension has not been built.
+try:  # pragma: no cover - depends on build environment
+    from ._rosenbrock import rosenbrock_hess_fast
+except Exception:  # pragma: no cover - extension may be missing
+    rosenbrock_hess_fast = None  # type: ignore
+
 Array: TypeAlias = NDArray[np.float64]
 
 
@@ -227,7 +235,16 @@ def rosenbrock_grad(x: Array) -> Array:
 
 
 def rosenbrock_hess(x: Array) -> Array:
-    """Hessian of the Rosenbrock function.
+    r"""Hessian of the Rosenbrock function.
+
+    The implementation dispatches to a Cython routine when available for
+    efficiency.  The mathematical form of the Hessian is
+
+    .. math::
+
+        H_{i,i} = 1200 x_i^2 - 400 x_{i+1} + 2, \quad
+        H_{i,i+1} = H_{i+1,i} = -400 x_i, \quad
+        H_{d,d} = 200.
 
     Parameters
     ----------
@@ -240,6 +257,10 @@ def rosenbrock_hess(x: Array) -> Array:
         Hessian matrix.
     """
     x = np.asarray(x)
+    if rosenbrock_hess_fast is not None:
+        # Use the compiled version for large ``d`` to avoid Python overhead.
+        return rosenbrock_hess_fast(x)
+
     d = len(x)
     hess = np.zeros((d, d))
     if d > 1:

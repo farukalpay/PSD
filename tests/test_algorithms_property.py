@@ -95,3 +95,18 @@ def test_deprecated_psd_warns() -> None:
     cfg = PSDConfig(epsilon=1e-6, ell=1.0, rho=1.0, max_iter=10)
     with pytest.warns(DeprecationWarning):
         algorithms.deprecated_psd(x0, grad, hess, 1e-6, 1.0, 1.0, config=cfg)
+
+
+def test_psd_handles_zero_rho() -> None:
+    """Ensure the algorithm remains stable when the Hessian is constant."""
+
+    def grad(x: np.ndarray) -> np.ndarray:
+        return x
+
+    def hess(x: np.ndarray) -> np.ndarray:
+        return np.eye(len(x))
+
+    x0 = np.array([1.0, -1.0])
+    cfg = PSDConfig(epsilon=1e-3, ell=1.0, rho=0.0, max_iter=10)
+    x, _ = algorithms.psd(x0, grad, hess, 1e-3, 1.0, 0.0, config=cfg)
+    assert np.all(np.isfinite(x))
