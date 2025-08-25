@@ -1,5 +1,7 @@
 [build-system]
-requires = ["setuptools>=61"]
+# ``cython`` is required to build optional extension modules that speed up
+# certain numerical routines such as the Rosenbrock Hessian.
+requires = ["setuptools>=61", "cython>=0.29.36", "numpy>=1.24"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -48,6 +50,12 @@ include = ["psd*", "psd_optimizer*"]
 [tool.setuptools.package-data]
 psd = ["py.typed"]
 psd_optimizer = ["py.typed"]
+
+# Extension modules
+[[tool.setuptools.ext-modules]]
+name = "psd._rosenbrock"
+sources = ["src/psd/_rosenbrock.pyx"]
+optional = true
 
 [tool.mypy]
 python_version = "3.11"
